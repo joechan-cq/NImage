@@ -15,10 +15,10 @@ import org.junit.Test;
  * you can run them directly from IDEs that support JUnit such as Android Studio.
  */
 
-public class NimagePluginTest {
+public class NImagePluginTest {
   @Test
   public void onMethodCall_getPlatformVersion_returnsExpectedValue() {
-    NimagePlugin plugin = new NimagePlugin();
+    NImagePlugin plugin = new NImagePlugin();
 
     final MethodCall call = new MethodCall("getPlatformVersion", null);
     MethodChannel.Result mockResult = mock(MethodChannel.Result.class);
