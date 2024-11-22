@@ -1,38 +1,62 @@
 package com.flext.nimage;
 
-import androidx.annotation.NonNull;
+import android.content.Context;
 
+import androidx.annotation.NonNull;
 import io.flutter.embedding.engine.plugins.FlutterPlugin;
 import io.flutter.plugin.common.MethodCall;
 import io.flutter.plugin.common.MethodChannel;
 import io.flutter.plugin.common.MethodChannel.MethodCallHandler;
 import io.flutter.plugin.common.MethodChannel.Result;
 
-/** NImagePlugin */
+/**
+ * NImagePlugin
+ */
 public class NImagePlugin implements FlutterPlugin, MethodCallHandler {
-  /// The MethodChannel that will the communication between Flutter and native Android
-  ///
-  /// This local reference serves to register the plugin with the Flutter Engine and unregister it
-  /// when the Flutter Engine is detached from the Activity
-  private MethodChannel channel;
 
-  @Override
-  public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
-    channel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(), "nimage");
-    channel.setMethodCallHandler(this);
-  }
+    private Context context;
+    private MethodChannel channel;
+    private TextureManager textureManager;
+    private static final String MTH_CREATE_TEXTURE = "mth_createTexture";
+    private static final String MTH_LOAD_IMAGE = "mth_loadImage";
+    private static final String MTH_DESTROY_TEXTURE = "mth_destroyTexture";
 
-  @Override
-  public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
-    if (call.method.equals("getPlatformVersion")) {
-      result.success("Android " + android.os.Build.VERSION.RELEASE);
-    } else {
-      result.notImplemented();
+    @Override
+    public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
+        context = flutterPluginBinding.getApplicationContext();
+        textureManager = new TextureManager(flutterPluginBinding.getTextureRegistry());
+        channel = new MethodChannel(flutterPluginBinding.getBinaryMessenger(), "nimage");
+        channel.setMethodCallHandler(this);
     }
-  }
 
-  @Override
-  public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
-    channel.setMethodCallHandler(null);
-  }
+    @Override
+    public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
+        if (call.method.equalsIgnoreCase(MTH_CREATE_TEXTURE)) {
+            //准备Texture
+            long textureId = textureManager.createTexture();
+            result.success(textureId);
+        } else if (call.method.equalsIgnoreCase(MTH_LOAD_IMAGE)) {
+            //加载图片
+            long textureId = call.argument("textureId");
+            LoadRequest loadRequest = LoadRequest.fromCall(call);
+
+            ImageTextureView imageView = textureManager.getImageTextureView(textureId);
+            if (imageView != null) {
+                imageView.loadImage(loadRequest, result);
+            } else {
+                result.error("NO_TEXTURE", "can't find texture with id:" + textureId, null);
+            }
+        } else if (call.method.equalsIgnoreCase(MTH_DESTROY_TEXTURE)) {
+            long textureId = (long) call.arguments;
+            textureManager.destroyTexture(textureId);
+            result.success(null);
+        } else {
+            result.notImplemented();
+        }
+    }
+
+    @Override
+    public void onDetachedFromEngine(@NonNull FlutterPluginBinding binding) {
+        channel.setMethodCallHandler(null);
+    }
 }

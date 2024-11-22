@@ -1,6 +1,7 @@
 import 'package:nimage/src/cache/lrucache.dart';
-import 'package:nimage/src/image_widget.dart';
-import 'package:nimage/src/imageinfo.dart';
+import 'package:nimage/src/models.dart';
+import 'package:nimage/src/nimage_channel.dart';
+import 'package:nimage/src/nimage_widget.dart';
 
 class TextureInfo {
   double width;
@@ -32,7 +33,6 @@ class TextureInfo {
   String toString() {
     return 'textureId:$textureId, imagekey:$imageKey, imageInfo:$imageInfo';
   }
-
 }
 
 class _Pair<E, F> {
@@ -50,6 +50,7 @@ class _Pair<E, F> {
 class ImageTextureCache {
   /// 最大LruCache缓存大小（默认情况下表示数量）
   static int maxCacheSize = 20;
+
   /// 存储Texture纹理的LruCache缓存
   late final LruCache<String, TextureInfo> _textureLruCache;
 
@@ -80,7 +81,9 @@ class ImageTextureCache {
     String keyPrefix = data;
 
     try {
-      MapEntry<String, _Pair<TextureInfo, int>> entry = _textureReferences.entries.firstWhere((MapEntry<String, _Pair<TextureInfo, int>> entry) {
+      MapEntry<String, _Pair<TextureInfo, int>> entry = _textureReferences
+          .entries
+          .firstWhere((MapEntry<String, _Pair<TextureInfo, int>> entry) {
         return entry.key.startsWith(keyPrefix);
       });
       if (entry.value != null && entry.value.first != null) {
@@ -89,7 +92,8 @@ class ImageTextureCache {
     } on StateError {}
 
     try {
-      MapEntry<String, TextureInfo> entry = _textureLruCache.entries.firstWhere((MapEntry<String, TextureInfo> entry) {
+      MapEntry<String, TextureInfo> entry = _textureLruCache.entries
+          .firstWhere((MapEntry<String, TextureInfo> entry) {
         return entry.key.startsWith(keyPrefix);
       });
       return entry.value;
@@ -101,7 +105,7 @@ class ImageTextureCache {
   ///
   /// 获取缓存的Texture数据
   ///
-  TextureInfo? getImageTexture(double width, double height, String imageKey) {
+  TextureInfo? getImageTexture(String imageKey, double width, double height) {
     String key = _createKey(width: width, height: height, imageKey: imageKey);
     TextureInfo? textureInfo = _textureReferences[key]?.first;
     textureInfo ??= _textureLruCache[key];
@@ -150,7 +154,7 @@ class ImageTextureCache {
   ///
   /// 增加引用计数
   ///
-  void increaseRef(TextureInfo textureInfo) {
+  int increaseRef(TextureInfo textureInfo) {
     String key = _createKey(textureInfo: textureInfo);
     _Pair<TextureInfo, int>? pair = _textureReferences[key];
     if (pair == null) {
@@ -162,6 +166,7 @@ class ImageTextureCache {
     pair ??= _Pair(textureInfo, 0);
     pair.second += 1;
     _textureReferences[key] = pair;
+    return pair.second;
   }
 
   ///
@@ -199,17 +204,16 @@ class ImageTextureCache {
     String? imageKey,
   }) {
     if (textureInfo != null) {
-      return '${textureInfo.imageKey}-w${textureInfo.width}-h${textureInfo
-          .height}';
+      return '${textureInfo.imageKey}-w${textureInfo.width}-h${textureInfo.height}';
     } else {
       return '$imageKey-w$width-h$height';
     }
   }
 
-  static void _onImageTextureRemoved(bool evict, String key,
-      TextureInfo value) {
+  static void _onImageTextureRemoved(
+      bool evict, String key, TextureInfo value) {
     if (evict) {
-      NImageChannel.disposeTexture(value.textureId);
+      NImageChannel.destroyTexture(value.textureId);
     }
   }
 }

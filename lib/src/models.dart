@@ -12,18 +12,57 @@ String generateMd5(String data) {
 typedef KeyFactory = String Function(NImageInfo imageInfo);
 
 KeyFactory _defaultFactory = (imageInfo) =>
-    '${generateMd5(imageInfo.uri)}_${imageInfo.imageWidth}_${imageInfo.imageHeight}';
+'${generateMd5(imageInfo.uri)}_${imageInfo.imageWidth}_${imageInfo.imageHeight}';
 
 KeyFactory nImageKeyFactory = _defaultFactory;
+
+///
+/// 发送给Native的加载请求
+///
+class LoadRequest {
+  /// Native创建用于显示图片的Texture
+  int textureId;
+
+  /// 图片加载url
+  String? uri;
+
+  /// 图片输出dstWidth，0表示原图大小，单位px
+  int? width;
+
+  /// 图片输出dstHeight，0表示原图大小，单位px
+  int? height;
+
+  LoadRequest({
+    required this.textureId,
+    this.uri,
+    this.width,
+    this.height,
+  });
+
+  Map<String, dynamic> toJson() {
+    Map<String, dynamic> json = {};
+    json['textureId'] = textureId;
+    if (uri != null) {
+      json['uri'] = uri;
+    }
+    if (width != null) {
+      json['width'] = width;
+    }
+    if (height != null) {
+      json['height'] = height;
+    }
+    return json;
+  }
+}
 
 class NImageInfo {
   /// 图片uri
   final String uri;
 
-  /// 图片宽度
+  /// 图片宽度，单位px
   final int imageWidth;
 
-  /// 图片高度
+  /// 图片高度，单位px
   final int imageHeight;
 
   /// 图片的本地缓存路径
