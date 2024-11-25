@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
+import 'package:nimage/src/cache/texture_cache_mgr.dart';
 
 String generateMd5(String data) {
   var content = utf8.encoder.convert(data);
@@ -8,13 +9,13 @@ String generateMd5(String data) {
   return digest.toString();
 }
 
-///给NImageInfo生成唯一Key的方法
-typedef KeyFactory = String Function(NImageInfo imageInfo);
-
-KeyFactory _defaultFactory = (imageInfo) =>
-'${generateMd5(imageInfo.uri)}_${imageInfo.imageWidth}_${imageInfo.imageHeight}';
-
-KeyFactory nImageKeyFactory = _defaultFactory;
+class LoadWorker {
+  int? textureId;
+  LoadRequest? request;
+  String? requestKey;
+  NImageInfo? imageInfo;
+  TextureInfo? textureInfo;
+}
 
 ///
 /// 发送给Native的加载请求
@@ -27,16 +28,16 @@ class LoadRequest {
   String? uri;
 
   /// 图片输出dstWidth，0表示原图大小，单位px
-  int? width;
+  int width;
 
   /// 图片输出dstHeight，0表示原图大小，单位px
-  int? height;
+  int height;
 
   LoadRequest({
     required this.textureId,
     this.uri,
-    this.width,
-    this.height,
+    required this.width,
+    required this.height,
   });
 
   Map<String, dynamic> toJson() {
@@ -45,15 +46,19 @@ class LoadRequest {
     if (uri != null) {
       json['uri'] = uri;
     }
-    if (width != null) {
-      json['width'] = width;
-    }
-    if (height != null) {
-      json['height'] = height;
-    }
+    json['width'] = width;
+    json['height'] = height;
     return json;
   }
 }
+
+///给NImageInfo生成唯一Key的方法
+typedef KeyFactory = String Function(NImageInfo imageInfo);
+
+KeyFactory _defaultFactory = (imageInfo) =>
+    '${generateMd5(imageInfo.uri)}_${imageInfo.imageWidth}_${imageInfo.imageHeight}';
+
+KeyFactory nImageKeyFactory = _defaultFactory;
 
 class NImageInfo {
   /// 图片uri
@@ -88,4 +93,8 @@ class NImageInfo {
   String toString() {
     return 'imageWidth: $imageWidth imageHeight: $imageHeight cachePath: $cachePath';
   }
+
+  bool get valid => imageWidth > 0 && imageHeight > 0;
+
+  String get imageKey => nImageKeyFactory(this);
 }

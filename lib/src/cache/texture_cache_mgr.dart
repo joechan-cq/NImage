@@ -181,7 +181,7 @@ class ImageTextureCache {
         //如果引用计数减到了0，那么加入LruCache缓存队列
         _textureLruCache.putIfAbsent(key, () => textureInfo);
         if (NImage.debug) {
-          print('$textureInfo is added to Lrucache');
+          print('$textureInfo is added to LruCache');
         }
         _textureReferences.remove(key);
       }
@@ -190,6 +190,14 @@ class ImageTextureCache {
       if (_textureReferences.isEmpty) {
         print('textureReferences is empty now!');
       }
+    }
+  }
+
+  void addTextureInfo2LruCache(TextureInfo textureInfo) {
+    String key = _createKey(textureInfo: textureInfo);
+    _textureLruCache.putIfAbsent(key, () => textureInfo);
+    if (NImage.debug) {
+      print('$textureInfo is added to LruCache directly');
     }
   }
 
