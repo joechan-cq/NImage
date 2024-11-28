@@ -20,6 +20,8 @@ public class NImagePlugin implements FlutterPlugin, MethodCallHandler {
     private static final String MTH_CREATE_TEXTURE = "mth_createTexture";
     private static final String MTH_LOAD_IMAGE = "mth_loadImage";
     private static final String MTH_DESTROY_TEXTURE = "mth_destroyTexture";
+    private static final String MTH_SET_VISIBLE = "mth_setVisible";
+    private static final String MTH_SET_INVISIBLE = "mth_setInvisible";
 
     @Override
     public void onAttachedToEngine(@NonNull FlutterPluginBinding flutterPluginBinding) {
@@ -39,13 +41,26 @@ public class NImagePlugin implements FlutterPlugin, MethodCallHandler {
             //加载图片
             long textureId = call.argument("textureId");
             LoadRequest loadRequest = LoadRequest.fromCall(call);
-
             ImageTextureView imageView = textureManager.getImageTextureView(textureId);
             if (imageView != null) {
                 imageView.loadImage(loadRequest, result);
             } else {
                 result.error("NO_TEXTURE", "can't find texture with id:" + textureId, null);
             }
+        } else if (call.method.equalsIgnoreCase(MTH_SET_VISIBLE)) {
+            long textureId = (long) call.arguments;
+            ImageTextureView imageView = textureManager.getImageTextureView(textureId);
+            if (imageView != null) {
+                imageView.setVisible(true);
+            }
+            result.success(null);
+        } else if (call.method.equalsIgnoreCase(MTH_SET_INVISIBLE)) {
+            long textureId = (long) call.arguments;
+            ImageTextureView imageView = textureManager.getImageTextureView(textureId);
+            if (imageView != null) {
+                imageView.setVisible(false);
+            }
+            result.success(null);
         } else if (call.method.equalsIgnoreCase(MTH_DESTROY_TEXTURE)) {
             long textureId = (long) call.arguments;
             textureManager.destroyTexture(textureId);

@@ -5,7 +5,7 @@ import androidx.collection.LongSparseArray;
 import io.flutter.view.TextureRegistry;
 
 /**
- * @author : chenqiao
+ * @author : Joe Chan
  * @date : 2024/11/22 14:37
  */
 class TextureManager {

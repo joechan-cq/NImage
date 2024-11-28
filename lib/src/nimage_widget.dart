@@ -49,7 +49,11 @@ class NImage extends StatelessWidget {
       }
     }
     return LayoutBuilder(builder: (ctx, cs) {
-      return Container();
+      return NImageTexture(
+        uri: src!,
+        width: width,
+        height: height,
+      );
     });
   }
 }
@@ -59,11 +63,16 @@ class NImageTexture extends StatefulWidget {
   final double? width;
   final double? height;
 
+  final Widget? placeHolder;
+  final ImageErrorWidgetBuilder? errorBuilder;
+
   const NImageTexture({
     super.key,
     required this.uri,
     this.width,
     this.height,
+    this.placeHolder,
+    this.errorBuilder,
   });
 
   @override
@@ -77,7 +86,6 @@ class _NImageTextureState extends State<NImageTexture> {
   late String _uri;
   late double _textureWidth;
   late double _textureHeight;
-  LoadRequest? _request;
 
   /// current image texture bound with State
   TextureInfo? _textureInfo;
@@ -95,26 +103,47 @@ class _NImageTextureState extends State<NImageTexture> {
 
   @override
   void didUpdateWidget(covariant NImageTexture oldWidget) {
-    // TODO: implement didUpdateWidget
     super.didUpdateWidget(oldWidget);
+    bool reload = false;
+    if (_uri != widget.uri || _error) {
+      // if image uri changed or has error when loaded.
+      _uri = widget.uri;
+      reload = true;
+    } else {
+      //size changed
+      if (widget.width != oldWidget.width ||
+          widget.height != oldWidget.height) {
+        reload = true;
+      }
+    }
   }
 
   @override
   void dispose() {
-    // TODO: implement dispose
     super.dispose();
+    _disposeTextureInfo();
   }
 
   @override
   Widget build(BuildContext context) {
-    // TODO: implement build
-    throw UnimplementedError();
+    if (_loading) {
+      return widget.placeHolder ??
+          SizedBox(width: widget.width, height: widget.height);
+    }
+    if (_error || _textureInfo == null) {
+      if (widget.errorBuilder != null) {
+        return widget.errorBuilder!(context, 'load src is null', null);
+      } else {
+        return SizedBox(width: widget.width, height: widget.height);
+      }
+    }
+    return Texture(textureId: _textureInfo!.textureId);
   }
 
   void _load() {
     //try to find the cached texture.
-    _textureInfo = ImageTextureCache.instance
-        .getImageTexture(_uri, _textureWidth, _textureHeight);
+    _textureInfo =
+        ImageTextureCache.instance.getImageTexture(_loadRequestKey());
     if (_textureInfo != null) {
       if (NImage.debug) {
         print('find texture from cache: ${_textureInfo!.textureId}');
@@ -155,6 +184,20 @@ class _NImageTextureState extends State<NImageTexture> {
             _saveTextureInfo(worker);
           }
         }
+      }).then((_) {
+        if (mounted) {
+          setState(() {
+            _loading = false;
+            _error = false;
+          });
+        }
+      }).catchError((e) {
+        if (mounted) {
+          setState(() {
+            _loading = false;
+            _error = true;
+          });
+        }
       });
     }
   }
@@ -189,10 +232,17 @@ class _NImageTextureState extends State<NImageTexture> {
     if (worker.requestKey != _loadRequestKey()) {
       //it means that current _NImageTextureState has been updated and reused.
       //and the new request doesn't match the old one.
-      //just put the texture into LruCache.
-      ImageTextureCache.instance.addTextureInfo2LruCache(worker.textureInfo!);
+      //just add the texture into LruCache.
+      ImageTextureCache.instance
+          .addTextureInfo2LruCache(worker.requestKey!, worker.textureInfo!);
     } else {
-      
+      //the request matches the state
+      _textureInfo = worker.textureInfo;
+      int refCount =
+          ImageTextureCache.instance.increaseRef(worker.textureInfo!);
+      if (NImage.debug) {
+        print('increaseRef imageTexture when loaded[${_textureInfo!.textureId}], now ref-count: $refCount');
+      }
     }
   }
 
@@ -203,10 +253,10 @@ class _NImageTextureState extends State<NImageTexture> {
   void _showExistedTexture() {
     _loading = false;
     _error = false;
-    int count = ImageTextureCache.instance.increaseRef(_textureInfo!);
+    int refCount = ImageTextureCache.instance.increaseRef(_textureInfo!);
     if (NImage.debug) {
       print(
-          'increaseRef imageTexture for existedTexture, now ref-count: $count');
+          'increaseRef imageTexture for existedTexture[${_textureInfo!.textureId}], now ref-count: $refCount');
     }
     callImageVisible();
   }
@@ -225,5 +275,18 @@ class _NImageTextureState extends State<NImageTexture> {
     if (_textureInfo?.textureId != null) {
       NImageChannel.callImageInVisible(_textureInfo!.textureId);
     }
+  }
+
+  void _disposeTextureInfo() {
+    if (_textureInfo == null) {
+      return;
+    }
+    int count = ImageTextureCache.instance.getRefCount(_textureInfo!);
+    if (count == 1) {
+      //this is the last reference.
+      //so call invisible to stop the gif/webp.
+      callImageInVisible();
+    }
+    ImageTextureCache.instance.decreaseRef(_textureInfo!);
   }
 }

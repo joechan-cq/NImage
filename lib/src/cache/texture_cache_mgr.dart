@@ -105,18 +105,18 @@ class ImageTextureCache {
   ///
   /// 获取缓存的Texture数据
   ///
-  TextureInfo? getImageTexture(String imageKey, double width, double height) {
-    String key = _createKey(width: width, height: height, imageKey: imageKey);
+  TextureInfo? getImageTexture(String textureKey) {
+    String key = textureKey;
     TextureInfo? textureInfo = _textureReferences[key]?.first;
     textureInfo ??= _textureLruCache[key];
     return textureInfo;
   }
 
   /// 获取指定TextureInfo的引用计数
-  int? getRefCount(TextureInfo textureInfo) {
+  int getRefCount(TextureInfo textureInfo) {
     String key = _createKey(textureInfo: textureInfo);
     _Pair<TextureInfo, int>? pair = _textureReferences[key];
-    return pair?.second;
+    return pair?.second ?? 0;
   }
 
   void increaseRefByTextureId(int textureId) {
@@ -193,8 +193,8 @@ class ImageTextureCache {
     }
   }
 
-  void addTextureInfo2LruCache(TextureInfo textureInfo) {
-    String key = _createKey(textureInfo: textureInfo);
+  void addTextureInfo2LruCache(String textureKey, TextureInfo textureInfo) {
+    String key = textureKey;
     _textureLruCache.putIfAbsent(key, () => textureInfo);
     if (NImage.debug) {
       print('$textureInfo is added to LruCache directly');

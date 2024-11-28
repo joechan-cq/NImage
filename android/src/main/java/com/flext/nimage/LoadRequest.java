@@ -4,7 +4,7 @@ import androidx.annotation.NonNull;
 import io.flutter.plugin.common.MethodCall;
 
 /**
- * @author : chenqiao
+ * @author : Joe Chan
  * @date : 2024/11/22 14:21
  */
 public class LoadRequest {
