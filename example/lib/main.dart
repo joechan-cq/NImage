@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:nimage/nimage.dart';
 
 void main() {
   runApp(const MyApp());
@@ -24,7 +25,21 @@ class _MyAppState extends State<MyApp> {
         appBar: AppBar(
           title: const Text('Plugin example app'),
         ),
-        body: Container(),
+        body: Center(
+          child: SizedBox(
+            width: 300,
+            height: 300,
+            child: NImage(
+              'https://images.pexels.com/photos/18876270/pexels-photo-18876270.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2',
+              width: 400,
+              height: 400,
+              placeHolder: Container(color: Colors.blue),
+              errorBuilder: (_, __, ___) {
+                return Container(color: Colors.red);
+              },
+            ),
+          ),
+        ),
       ),
     );
   }

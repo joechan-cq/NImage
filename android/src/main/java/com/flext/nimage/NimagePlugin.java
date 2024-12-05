@@ -35,11 +35,11 @@ public class NImagePlugin implements FlutterPlugin, MethodCallHandler {
     public void onMethodCall(@NonNull MethodCall call, @NonNull Result result) {
         if (call.method.equalsIgnoreCase(MTH_CREATE_TEXTURE)) {
             //准备Texture
-            long textureId = textureManager.createTexture();
+            long textureId = textureManager.createTexture(context);
             result.success(textureId);
         } else if (call.method.equalsIgnoreCase(MTH_LOAD_IMAGE)) {
             //加载图片
-            long textureId = call.argument("textureId");
+            long textureId = ((Number) call.argument("textureId")).longValue();
             LoadRequest loadRequest = LoadRequest.fromCall(call);
             ImageTextureView imageView = textureManager.getImageTextureView(textureId);
             if (imageView != null) {
@@ -48,21 +48,21 @@ public class NImagePlugin implements FlutterPlugin, MethodCallHandler {
                 result.error("NO_TEXTURE", "can't find texture with id:" + textureId, null);
             }
         } else if (call.method.equalsIgnoreCase(MTH_SET_VISIBLE)) {
-            long textureId = (long) call.arguments;
+            long textureId = ((Number) call.arguments).longValue();
             ImageTextureView imageView = textureManager.getImageTextureView(textureId);
             if (imageView != null) {
                 imageView.setVisible(true);
             }
             result.success(null);
         } else if (call.method.equalsIgnoreCase(MTH_SET_INVISIBLE)) {
-            long textureId = (long) call.arguments;
+            long textureId = ((Number) call.arguments).longValue();
             ImageTextureView imageView = textureManager.getImageTextureView(textureId);
             if (imageView != null) {
                 imageView.setVisible(false);
             }
             result.success(null);
         } else if (call.method.equalsIgnoreCase(MTH_DESTROY_TEXTURE)) {
-            long textureId = (long) call.arguments;
+            long textureId = ((Number) call.arguments).longValue();
             textureManager.destroyTexture(textureId);
             result.success(null);
         } else {

@@ -6,7 +6,7 @@ plugins {
 }
 
 android {
-    namespace = "com.flext.nimage_example"
+    namespace = "com.example.nimage_example"
     compileSdk = flutter.compileSdkVersion
     ndkVersion = flutter.ndkVersion
 

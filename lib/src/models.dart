@@ -70,14 +70,10 @@ class NImageInfo {
   /// 图片高度，单位px
   final int imageHeight;
 
-  /// 图片的本地缓存路径
-  final String? cachePath;
-
   NImageInfo({
     required this.uri,
     required this.imageWidth,
     required this.imageHeight,
-    this.cachePath,
   });
 
   static NImageInfo fromMap(Map<String, dynamic> map) {
@@ -85,13 +81,12 @@ class NImageInfo {
       uri: map['uri'],
       imageWidth: map['imageWidth'],
       imageHeight: map['imageHeight'],
-      cachePath: map['cachePath'],
     );
   }
 
   @override
   String toString() {
-    return 'imageWidth: $imageWidth imageHeight: $imageHeight cachePath: $cachePath';
+    return 'imageWidth: $imageWidth imageHeight: $imageHeight';
   }
 
   bool get valid => imageWidth > 0 && imageHeight > 0;
