@@ -137,7 +137,16 @@ class _NImageTextureState extends State<NImageTexture> {
         return SizedBox(width: widget.width, height: widget.height);
       }
     }
-    return Texture(textureId: _textureInfo!.textureId);
+    Widget t = Texture(textureId: _textureInfo!.textureId);
+    if (widget.width != null && widget.height != null) {
+      return SizedBox(
+        width: widget.width,
+        height: widget.height,
+        child: t,
+      );
+    } else {
+      return t;
+    }
   }
 
   void _load() {
