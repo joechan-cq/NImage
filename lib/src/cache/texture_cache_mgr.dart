@@ -3,7 +3,15 @@ import 'package:nimage/src/models.dart';
 import 'package:nimage/src/nimage_channel.dart';
 import 'package:nimage/src/nimage_widget.dart';
 
+typedef TextureKeyFactory = String Function(
+    String uri, double width, double height);
+
+TextureKeyFactory _defaultFactory = (uri, w, h) => '${generateMd5(uri)}-$w-$h';
+
+TextureKeyFactory nTextureKeyFactory = _defaultFactory;
+
 class TextureInfo {
+  String uri;
   double width;
   double height;
   int textureId;
@@ -11,6 +19,7 @@ class TextureInfo {
   NImageInfo? imageInfo;
 
   TextureInfo({
+    required this.uri,
     required this.width,
     required this.height,
     required this.textureId,
@@ -18,12 +27,21 @@ class TextureInfo {
     this.imageInfo,
   });
 
+  TextureInfo.fake({
+    required this.uri,
+    required this.width,
+    required this.height,
+  })  : textureId = -1,
+        imageKey = '',
+        imageInfo = null;
+
   @override
   bool operator ==(Object other) {
     if (other is! TextureInfo) {
       return false;
     }
-    return width == other.width &&
+    return uri == other.uri &&
+        width == other.width &&
         height == other.height &&
         textureId == other.textureId &&
         imageKey == other.imageKey;
@@ -31,8 +49,10 @@ class TextureInfo {
 
   @override
   String toString() {
-    return 'textureId:$textureId, imagekey:$imageKey, imageInfo:$imageInfo';
+    return 'textureId:$textureId, textureWidth:$width, textureHeight:$height, imagekey:$imageKey, imageInfo:$imageInfo';
   }
+
+  String get key => nTextureKeyFactory(uri, width, height);
 }
 
 class _Pair<E, F> {
@@ -114,7 +134,7 @@ class ImageTextureCache {
 
   /// 获取指定TextureInfo的引用计数
   int getRefCount(TextureInfo textureInfo) {
-    String key = _createKey(textureInfo: textureInfo);
+    String key = textureInfo.key;
     _Pair<TextureInfo, int>? pair = _textureReferences[key];
     return pair?.second ?? 0;
   }
@@ -155,7 +175,7 @@ class ImageTextureCache {
   /// 增加引用计数
   ///
   int increaseRef(TextureInfo textureInfo) {
-    String key = _createKey(textureInfo: textureInfo);
+    String key = textureInfo.key;
     _Pair<TextureInfo, int>? pair = _textureReferences[key];
     if (pair == null) {
       _textureLruCache.remove(key);
@@ -173,7 +193,7 @@ class ImageTextureCache {
   /// 减少引用计数
   ///
   void decreaseRef(TextureInfo textureInfo) {
-    String key = _createKey(textureInfo: textureInfo);
+    String key = textureInfo.key;
     _Pair<TextureInfo, int>? pair = _textureReferences[key];
     if (pair != null) {
       pair.second -= 1;
@@ -203,19 +223,6 @@ class ImageTextureCache {
 
   void clearLruCache() {
     _textureLruCache.clear();
-  }
-
-  String _createKey({
-    TextureInfo? textureInfo,
-    double? width,
-    double? height,
-    String? imageKey,
-  }) {
-    if (textureInfo != null) {
-      return '${textureInfo.imageKey}-w${textureInfo.width}-h${textureInfo.height}';
-    } else {
-      return '$imageKey-w$width-h$height';
-    }
   }
 
   static void _onImageTextureRemoved(

@@ -98,7 +98,7 @@ class _NImageTextureState extends State<NImageTexture> {
     _textureHeight = widget.height ?? 0;
     _loading = true;
     _error = false;
-    _load();
+    _load(true);
   }
 
   @override
@@ -113,8 +113,26 @@ class _NImageTextureState extends State<NImageTexture> {
       //size changed
       if (widget.width != oldWidget.width ||
           widget.height != oldWidget.height) {
+        _textureWidth = widget.width ?? 0;
+        _textureHeight = widget.height ?? 0;
         reload = true;
       }
+    }
+
+    if (reload) {
+      //decrease the current reference
+      if (_textureInfo != null) {
+        int count = ImageTextureCache.instance.getRefCount(_textureInfo!);
+        if (count == 1) {
+          callImageInVisible();
+        }
+        ImageTextureCache.instance.decreaseRef(_textureInfo!);
+        if (NImage.debug) {
+          print(
+              'decreaseRef texture for reload: ${_textureInfo!.textureId}, ref-count: ${count - 1}');
+        }
+      }
+      _load(false);
     }
   }
 
@@ -149,10 +167,13 @@ class _NImageTextureState extends State<NImageTexture> {
     }
   }
 
-  void _load() {
+  void _load(bool init) {
     //try to find the cached texture.
-    _textureInfo =
-        ImageTextureCache.instance.getImageTexture(_loadRequestKey());
+    _textureInfo = ImageTextureCache.instance.getImageTexture(TextureInfo.fake(
+      uri: _uri,
+      width: _textureWidth,
+      height: _textureHeight,
+    ).key);
     if (_textureInfo != null) {
       if (NImage.debug) {
         print('find texture from cache: ${_textureInfo!.textureId}');
@@ -160,6 +181,12 @@ class _NImageTextureState extends State<NImageTexture> {
       _showExistedTexture();
     } else {
       //load by native
+      if (!init) {
+        setState(() {
+          _loading = true;
+          _error = false;
+        });
+      }
       //create texture first.
       LoadWorker w = LoadWorker();
       _createTexture(w).then((worker) async {
@@ -182,6 +209,7 @@ class _NImageTextureState extends State<NImageTexture> {
           NImageInfo? imageInfo = worker.imageInfo;
           if (imageInfo != null) {
             TextureInfo textureInfo = TextureInfo(
+              uri: _uri,
               width: _textureWidth,
               height: _textureHeight,
               textureId: tid,
@@ -250,7 +278,8 @@ class _NImageTextureState extends State<NImageTexture> {
       int refCount =
           ImageTextureCache.instance.increaseRef(worker.textureInfo!);
       if (NImage.debug) {
-        print('increaseRef imageTexture when loaded[${_textureInfo!.textureId}], now ref-count: $refCount');
+        print(
+            'increaseRef imageTexture when loaded[${_textureInfo!.textureId}], now ref-count: $refCount');
       }
     }
   }

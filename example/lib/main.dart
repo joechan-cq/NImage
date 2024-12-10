@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:nimage/nimage.dart';
 
+import 'case/list_view_page.dart';
+import 'case/single_picture_page.dart';
+
 void main() {
+  NImage.debug = true;
   runApp(const MyApp());
 }
 
@@ -25,21 +29,39 @@ class _MyAppState extends State<MyApp> {
         appBar: AppBar(
           title: const Text('Plugin example app'),
         ),
-        body: Center(
-          child: SizedBox(
-            width: 300,
-            height: 300,
-            child: NImage(
-              'https://images.pexels.com/photos/18876270/pexels-photo-18876270.jpeg?auto=compress&cs=tinysrgb&w=1260&h=750&dpr=2',
-              width: 400,
-              height: 400,
-              placeHolder: Container(color: Colors.blue),
-              errorBuilder: (_, __, ___) {
-                return Container(color: Colors.red);
-              },
+        body: Builder(builder: (context) {
+          return Container(
+            alignment: Alignment.topCenter,
+            child: Column(
+              children: [
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    child: Text('Single', style: TextStyle(fontSize: 18)),
+                    onPressed: () {
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (context) {
+                        return SinglePicturePage();
+                      }));
+                    },
+                  ),
+                ),
+                SizedBox(
+                  width: double.infinity,
+                  child: FilledButton(
+                    child: Text('ListView', style: TextStyle(fontSize: 18)),
+                    onPressed: () {
+                      Navigator.push(context,
+                          MaterialPageRoute(builder: (context) {
+                        return ListViewPage();
+                      }));
+                    },
+                  ),
+                ),
+              ],
             ),
-          ),
-        ),
+          );
+        }),
       ),
     );
   }
