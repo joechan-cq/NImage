@@ -15,23 +15,21 @@ class SinglePicturePageState extends State<SinglePicturePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Row(
+        title: const Row(
           mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[
-            Text('Single Picture'),
-          ],
+          children: <Widget>[Text('Single Picture')],
         ),
       ),
       body: Column(
         children: [
-          Text('select to change the size of picture'),
+          const Text('select to change the size of picture'),
           Row(
             mainAxisSize: MainAxisSize.max,
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Expanded(
                 child: RadioListTile<double>(
-                    title: Text('100'),
+                    title: const Text('100'),
                     value: 100,
                     groupValue: size,
                     onChanged: (double? v) {
@@ -42,7 +40,7 @@ class SinglePicturePageState extends State<SinglePicturePage> {
               ),
               Expanded(
                 child: RadioListTile<double>(
-                    title: Text('200'),
+                    title: const Text('200'),
                     value: 200,
                     groupValue: size,
                     onChanged: (double? v) {
@@ -53,7 +51,7 @@ class SinglePicturePageState extends State<SinglePicturePage> {
               ),
               Expanded(
                 child: RadioListTile<double>(
-                    title: Text('300'),
+                    title: const Text('300'),
                     value: 300,
                     groupValue: size,
                     onChanged: (double? v) {

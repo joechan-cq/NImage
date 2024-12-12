@@ -229,6 +229,9 @@ class ImageTextureCache {
       bool evict, String key, TextureInfo value) {
     if (evict) {
       NImageChannel.destroyTexture(value.textureId);
+      if (NImage.debug) {
+        print('destroyTexture [${value.textureId}] from LRUCache');
+      }
     }
   }
 }

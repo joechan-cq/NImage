@@ -1,3 +1,4 @@
+import 'dart:math';
 import 'dart:ui';
 
 import 'package:flutter/widgets.dart';
@@ -11,6 +12,8 @@ class _Pair<F, S> {
 
   _Pair([this.first, this.second]);
 }
+
+int _requestNum = 0;
 
 class NImage extends StatelessWidget {
   /// whether to print debug log
@@ -90,6 +93,8 @@ class _NImageTextureState extends State<NImageTexture> {
   /// current image texture bound with State
   TextureInfo? _textureInfo;
 
+  late int _num;
+
   @override
   void initState() {
     super.initState();
@@ -129,7 +134,7 @@ class _NImageTextureState extends State<NImageTexture> {
         ImageTextureCache.instance.decreaseRef(_textureInfo!);
         if (NImage.debug) {
           print(
-              'decreaseRef texture for reload: ${_textureInfo!.textureId}, ref-count: ${count - 1}');
+              'decreaseRef for reload [${_textureInfo!.textureId}, ${_textureInfo!.key}], ref-count: ${max(0, count - 1)}');
         }
       }
       _load(false);
@@ -144,27 +149,35 @@ class _NImageTextureState extends State<NImageTexture> {
 
   @override
   Widget build(BuildContext context) {
-    if (_loading) {
-      return widget.placeHolder ??
-          SizedBox(width: widget.width, height: widget.height);
-    }
-    if (_error || _textureInfo == null) {
-      if (widget.errorBuilder != null) {
-        return widget.errorBuilder!(context, 'load src is null', null);
+    return LayoutBuilder(builder: (ctx, cs) {
+      double w;
+      double h;
+      if (widget.width == null) {
+        w = cs.maxWidth;
       } else {
-        return SizedBox(width: widget.width, height: widget.height);
+        w = cs.constrainWidth(widget.width!);
       }
-    }
-    Widget t = Texture(textureId: _textureInfo!.textureId);
-    if (widget.width != null && widget.height != null) {
-      return SizedBox(
-        width: widget.width,
-        height: widget.height,
-        child: t,
-      );
-    } else {
-      return t;
-    }
+      if (widget.height == null) {
+        h = cs.maxHeight;
+      } else {
+        h = cs.constrainHeight(widget.height!);
+      }
+      if (_loading) {
+        return SizedBox(width: w, height: h, child: widget.placeHolder);
+      }
+      if (_error || _textureInfo == null) {
+        if (widget.errorBuilder != null) {
+          return SizedBox(
+              width: w,
+              height: h,
+              child: widget.errorBuilder!(context, 'load src is null', null));
+        } else {
+          return SizedBox(width: w, height: h);
+        }
+      }
+      Widget t = Texture(textureId: _textureInfo!.textureId);
+      return SizedBox(width: w, height: h, child: t);
+    });
   }
 
   void _load(bool init) {
@@ -175,9 +188,6 @@ class _NImageTextureState extends State<NImageTexture> {
       height: _textureHeight,
     ).key);
     if (_textureInfo != null) {
-      if (NImage.debug) {
-        print('find texture from cache: ${_textureInfo!.textureId}');
-      }
       _showExistedTexture();
     } else {
       //load by native
@@ -194,6 +204,9 @@ class _NImageTextureState extends State<NImageTexture> {
         if (!mounted) {
           //the case occurs when listview scroll quickly.
           NImageChannel.destroyTexture(worker.textureId!);
+          if (NImage.debug) {
+            print('destroyTexture [${worker.textureId}] because of unmounted');
+          }
           return null;
         }
         if (NImage.debug) {
@@ -205,28 +218,38 @@ class _NImageTextureState extends State<NImageTexture> {
         //acquire imageInfo from native.
         //by now the image has been drawn on texture.
         if (worker != null) {
-          int tid = worker.textureId!;
-          NImageInfo? imageInfo = worker.imageInfo;
-          if (imageInfo != null) {
-            TextureInfo textureInfo = TextureInfo(
-              uri: _uri,
-              width: _textureWidth,
-              height: _textureHeight,
-              textureId: tid,
-              imageKey: imageInfo.imageKey,
-              imageInfo: imageInfo,
-            );
-            worker.textureInfo = textureInfo;
-            // put the texture to cache
-            _saveTextureInfo(worker);
+          if (!mounted) {
+            NImageChannel.destroyTexture(worker.textureId!);
+            if (NImage.debug) {
+              print(
+                  'destroyTexture [${worker.textureId}] because of unmounted');
+            }
+          } else {
+            int tid = worker.textureId!;
+            NImageInfo? imageInfo = worker.imageInfo;
+            if (imageInfo != null) {
+              TextureInfo textureInfo = TextureInfo(
+                uri: _uri,
+                width: _textureWidth,
+                height: _textureHeight,
+                textureId: tid,
+                imageKey: imageInfo.imageKey,
+                imageInfo: imageInfo,
+              );
+              worker.textureInfo = textureInfo;
+              // put the texture to cache
+              _saveTextureInfo(worker);
+              setState(() {
+                _loading = false;
+                _error = false;
+              });
+            } else {
+              setState(() {
+                _loading = false;
+                _error = true;
+              });
+            }
           }
-        }
-      }).then((_) {
-        if (mounted) {
-          setState(() {
-            _loading = false;
-            _error = false;
-          });
         }
       }).catchError((e) {
         if (mounted) {
@@ -251,6 +274,7 @@ class _NImageTextureState extends State<NImageTexture> {
     int widthPx = 0, heightPx = 0;
     widthPx = (window.devicePixelRatio * _textureWidth).toInt();
     heightPx = (window.devicePixelRatio * _textureHeight).toInt();
+    _num = _requestNum++;
     worker.requestKey = _loadRequestKey();
     LoadRequest request = LoadRequest(
       textureId: worker.textureId!,
@@ -270,8 +294,8 @@ class _NImageTextureState extends State<NImageTexture> {
       //it means that current _NImageTextureState has been updated and reused.
       //and the new request doesn't match the old one.
       //just add the texture into LruCache.
-      ImageTextureCache.instance
-          .addTextureInfo2LruCache(worker.requestKey!, worker.textureInfo!);
+      ImageTextureCache.instance.addTextureInfo2LruCache(
+          worker.textureInfo!.key, worker.textureInfo!);
     } else {
       //the request matches the state
       _textureInfo = worker.textureInfo;
@@ -279,13 +303,13 @@ class _NImageTextureState extends State<NImageTexture> {
           ImageTextureCache.instance.increaseRef(worker.textureInfo!);
       if (NImage.debug) {
         print(
-            'increaseRef imageTexture when loaded[${_textureInfo!.textureId}], now ref-count: $refCount');
+            'loaded from native [${_textureInfo!.textureId}, ${_textureInfo!.key}], now ref-count: $refCount');
       }
     }
   }
 
   String _loadRequestKey() {
-    return '$_uri-$_textureWidth-$_textureHeight';
+    return '$_uri-$_textureWidth-$_textureHeight-$_num';
   }
 
   void _showExistedTexture() {
@@ -294,7 +318,7 @@ class _NImageTextureState extends State<NImageTexture> {
     int refCount = ImageTextureCache.instance.increaseRef(_textureInfo!);
     if (NImage.debug) {
       print(
-          'increaseRef imageTexture for existedTexture[${_textureInfo!.textureId}], now ref-count: $refCount');
+          'find existed texture [${_textureInfo!.textureId}, ${_textureInfo!.key}], now ref-count: $refCount');
     }
     callImageVisible();
   }
@@ -317,6 +341,9 @@ class _NImageTextureState extends State<NImageTexture> {
 
   void _disposeTextureInfo() {
     if (_textureInfo == null) {
+      if (NImage.debug) {
+        print('dispose, but textureInfo is null');
+      }
       return;
     }
     int count = ImageTextureCache.instance.getRefCount(_textureInfo!);
@@ -324,6 +351,10 @@ class _NImageTextureState extends State<NImageTexture> {
       //this is the last reference.
       //so call invisible to stop the gif/webp.
       callImageInVisible();
+    }
+    if (NImage.debug) {
+      print(
+          'decreaseRef when disposed [${_textureInfo!.textureId}, ${_textureInfo!.key}], now ref-count: ${max(0, count - 1)}');
     }
     ImageTextureCache.instance.decreaseRef(_textureInfo!);
   }
