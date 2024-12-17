@@ -9,7 +9,7 @@ public class NImageInfo {
     }
 
     func toMap() -> [String: Any] {
-        var map: [String: Any] = [:]
+        var map: Dictionary<String, Any> = [:]
         if let uri = uri {
             map["uri"] = uri
         }

@@ -9,14 +9,15 @@ public class TextureManager {
     }
 
     public func createTexture() -> Int64 {
-        let imageTextureView = ImageTextureView()
+        let imageTextureView = ImageTextureView(textureRegistry)
         let textureId = textureRegistry.register(imageTextureView)
+        imageTextureView.textureId = textureId
         cache[textureId] = imageTextureView
         return textureId
     }
 
     public func destroyTexture(_ textureId: Int64) {
-        if let imageView = cache[textureId] {
+        if cache[textureId] != nil {
             cache.removeValue(forKey: textureId)
             self.textureRegistry.unregisterTexture(textureId)
         }
