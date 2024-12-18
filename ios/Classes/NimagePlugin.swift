@@ -21,6 +21,7 @@ public class NimagePlugin: NSObject, FlutterPlugin {
     
     init(registrar: FlutterPluginRegistrar) {
         textureManager = TextureManager(textureRegistry: registrar.textures())
+        ImageLoader.proxy = SDWebImageLoader()
         super.init()
     }
     
