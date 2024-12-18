@@ -29,19 +29,14 @@ public class NimagePlugin: NSObject, FlutterPlugin {
         switch method {
         case MethodName.createTexture:
             createTexture(call, result: result)
-            result(nil)
         case MethodName.loadImage:
             loadImage(call, result: result)
-            result(nil)
         case MethodName.destroyTexture:
             destroyTexture(call, result: result)
-            result(nil)
         case MethodName.setVisible:
             setVisible(call, result: result)
-            result(nil)
         case MethodName.setInvisible:
             setInvisible(call, result: result)
-            result(nil)
         default:
             result(FlutterMethodNotImplemented)
         }

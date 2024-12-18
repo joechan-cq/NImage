@@ -75,7 +75,13 @@ public class ImageTextureView: NSObject, FlutterTexture {
         let imageHeight = image.height
 
         var pixelBuffer: CVPixelBuffer?
-        let status = CVPixelBufferCreate(kCFAllocatorDefault, imageWidth, imageHeight, kCVPixelFormatType_32BGRA, nil, &pixelBuffer)
+        let options: [String: Any] = [
+            kCVPixelBufferIOSurfacePropertiesKey as String: [:],
+            kCVPixelBufferCGImageCompatibilityKey as String: false,
+            kCVPixelBufferCGBitmapContextCompatibilityKey as String: false
+        ]
+
+        let status = CVPixelBufferCreate(kCFAllocatorDefault, imageWidth, imageHeight, kCVPixelFormatType_32BGRA, options as CFDictionary, &pixelBuffer)
 
         if status != kCVReturnSuccess {
             return nil
@@ -85,7 +91,7 @@ public class ImageTextureView: NSObject, FlutterTexture {
         let data = CVPixelBufferGetBaseAddress(pixelBuffer!)
 
         let colorSpace = CGColorSpaceCreateDeviceRGB()
-        let context = CGContext(data: data, width: imageWidth, height: imageHeight, bitsPerComponent: 8, bytesPerRow: CVPixelBufferGetBytesPerRow(pixelBuffer!), space: colorSpace, bitmapInfo: CGImageAlphaInfo.premultipliedFirst.rawValue)
+        let context = CGContext(data: data, width: imageWidth, height: imageHeight, bitsPerComponent: 8, bytesPerRow: CVPixelBufferGetBytesPerRow(pixelBuffer!), space: colorSpace, bitmapInfo: kCGBitmapByteOrder32Host.rawValue | CGImageAlphaInfo.premultipliedFirst.rawValue)
 
         context?.draw(image, in: CGRect(x: 0, y: 0, width: imageWidth, height: imageHeight))
 
