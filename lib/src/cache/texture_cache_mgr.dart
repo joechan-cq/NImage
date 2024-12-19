@@ -68,13 +68,13 @@ class _Pair<E, F> {
 }
 
 class ImageTextureCache {
-  /// 最大LruCache缓存大小（默认情况下表示数量）
+  /// The maximum LruCache cache size (by default, represents the number)
   static int maxCacheSize = 20;
 
-  /// 存储Texture纹理的LruCache缓存
+  /// The LruCache cache for storing textures
   late final LruCache<String, TextureInfo> _textureLruCache;
 
-  /// Texture纹理引用计数
+  /// Reference count for Texture textures
   late final Map<String, _Pair<TextureInfo, int>> _textureReferences;
 
   factory ImageTextureCache() => _getInstance();
@@ -122,9 +122,7 @@ class ImageTextureCache {
     return null;
   }
 
-  ///
-  /// 获取缓存的Texture数据
-  ///
+  /// Find the cached Texture by Key
   TextureInfo? getImageTexture(String textureKey) {
     String key = textureKey;
     TextureInfo? textureInfo = _textureReferences[key]?.first;
@@ -132,7 +130,7 @@ class ImageTextureCache {
     return textureInfo;
   }
 
-  /// 获取指定TextureInfo的引用计数
+  /// Acquire the reference count of the Texture
   int getRefCount(TextureInfo textureInfo) {
     String key = textureInfo.key;
     _Pair<TextureInfo, int>? pair = _textureReferences[key];
@@ -146,7 +144,7 @@ class ImageTextureCache {
       });
       entry.value.second += 1;
     } on StateError catch (ignore) {
-      //说明Ref中没有找到，那么如果LruCache中有，那么需要移除掉
+      //there is no reference in Ref, then we should remove it from LruCache and add it to Ref
       try {
         var entry = _textureLruCache.entries
             .firstWhere((entry) => entry.value.textureId == textureId);
@@ -171,9 +169,7 @@ class ImageTextureCache {
     } on StateError catch (ignore) {}
   }
 
-  ///
-  /// 增加引用计数
-  ///
+  /// increase the reference count of the Texture
   int increaseRef(TextureInfo textureInfo) {
     String key = textureInfo.key;
     _Pair<TextureInfo, int>? pair = _textureReferences[key];
@@ -189,16 +185,14 @@ class ImageTextureCache {
     return pair.second;
   }
 
-  ///
-  /// 减少引用计数
-  ///
+  /// decrease the reference count of the Texture
   void decreaseRef(TextureInfo textureInfo) {
     String key = textureInfo.key;
     _Pair<TextureInfo, int>? pair = _textureReferences[key];
     if (pair != null) {
       pair.second -= 1;
       if (pair.second == 0) {
-        //如果引用计数减到了0，那么加入LruCache缓存队列
+        //if reference count is decreased to 0, then add it to LruCache
         _textureLruCache.putIfAbsent(key, () => textureInfo);
         if (NImage.debug) {
           print('$textureInfo is added to LruCache');

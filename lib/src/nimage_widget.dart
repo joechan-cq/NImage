@@ -1,17 +1,10 @@
 import 'dart:math';
 import 'dart:ui';
 
-import 'package:flutter/widgets.dart';
+import 'package:flutter/material.dart';
 import 'package:nimage/src/cache/texture_cache_mgr.dart';
 import 'package:nimage/src/models.dart';
 import 'package:nimage/src/nimage_channel.dart';
-
-class _Pair<F, S> {
-  F? first;
-  S? second;
-
-  _Pair([this.first, this.second]);
-}
 
 int _requestNum = 0;
 
@@ -33,6 +26,8 @@ class NImage extends StatelessWidget {
 
   final String? src;
 
+  final Color? backgroundColor;
+
   const NImage(
     this.src, {
     super.key,
@@ -40,24 +35,30 @@ class NImage extends StatelessWidget {
     this.height,
     this.placeHolder,
     this.errorBuilder,
+    this.backgroundColor,
   });
 
   @override
   Widget build(BuildContext context) {
     if (src?.isEmpty ?? true) {
       if (errorBuilder != null) {
-        return errorBuilder!(context, 'load src is null', null);
+        return SizedBox(
+          width: width,
+          height: height,
+          child: errorBuilder!(context, 'load src is null', null),
+        );
       } else {
-        return SizedBox(width: width, height: height);
+        return Container(width: width, height: height, color: backgroundColor);
       }
     }
-    return LayoutBuilder(builder: (ctx, cs) {
-      return NImageTexture(
-        uri: src!,
-        width: width,
-        height: height,
-      );
-    });
+    return NImageTexture(
+      uri: src!,
+      width: width,
+      height: height,
+      placeHolder: placeHolder,
+      errorBuilder: errorBuilder,
+      backgroundColor: backgroundColor,
+    );
   }
 }
 
@@ -68,6 +69,7 @@ class NImageTexture extends StatefulWidget {
 
   final Widget? placeHolder;
   final ImageErrorWidgetBuilder? errorBuilder;
+  final Color? backgroundColor;
 
   const NImageTexture({
     super.key,
@@ -76,6 +78,7 @@ class NImageTexture extends StatefulWidget {
     this.height,
     this.placeHolder,
     this.errorBuilder,
+    this.backgroundColor,
   });
 
   @override
@@ -90,8 +93,11 @@ class _NImageTextureState extends State<NImageTexture> {
   late double _textureWidth;
   late double _textureHeight;
 
+  Color? _backgroundColor;
+
   /// current image texture bound with State
   TextureInfo? _textureInfo;
+  int? _unboundTextureId;
 
   late int _num;
 
@@ -101,6 +107,7 @@ class _NImageTextureState extends State<NImageTexture> {
     _uri = widget.uri;
     _textureWidth = widget.width ?? 0;
     _textureHeight = widget.height ?? 0;
+    _backgroundColor = widget.backgroundColor;
     _loading = true;
     _error = false;
     _load(true);
@@ -110,6 +117,7 @@ class _NImageTextureState extends State<NImageTexture> {
   void didUpdateWidget(covariant NImageTexture oldWidget) {
     super.didUpdateWidget(oldWidget);
     bool reload = false;
+    bool onlyRefresh = false;
     if (_uri != widget.uri || _error) {
       // if image uri changed or has error when loaded.
       _uri = widget.uri;
@@ -121,6 +129,13 @@ class _NImageTextureState extends State<NImageTexture> {
         _textureWidth = widget.width ?? 0;
         _textureHeight = widget.height ?? 0;
         reload = true;
+      }
+    }
+
+    if (!reload) {
+      if (_backgroundColor != widget.backgroundColor) {
+        _backgroundColor = widget.backgroundColor;
+        onlyRefresh = true;
       }
     }
 
@@ -138,12 +153,15 @@ class _NImageTextureState extends State<NImageTexture> {
         }
       }
       _load(false);
+    } else if (onlyRefresh) {
+      setState(() {});
     }
   }
 
   @override
   void dispose() {
     super.dispose();
+    _destroyUnboundTexture();
     _disposeTextureInfo();
   }
 
@@ -168,15 +186,21 @@ class _NImageTextureState extends State<NImageTexture> {
       if (_error || _textureInfo == null) {
         if (widget.errorBuilder != null) {
           return SizedBox(
-              width: w,
-              height: h,
-              child: widget.errorBuilder!(context, 'load src is null', null));
+            width: w,
+            height: h,
+            child: widget.errorBuilder!(context, 'load src is null', null),
+          );
         } else {
-          return SizedBox(width: w, height: h);
+          return Container(width: w, height: h, color: _backgroundColor);
         }
       }
       Widget t = Texture(textureId: _textureInfo!.textureId);
-      return SizedBox(width: w, height: h, child: t);
+      return Container(
+        width: w,
+        height: h,
+        color: _backgroundColor,
+        child: t,
+      );
     });
   }
 
@@ -203,10 +227,7 @@ class _NImageTextureState extends State<NImageTexture> {
         assert(worker.textureId != null);
         if (!mounted) {
           //the case occurs when listview scroll quickly.
-          NImageChannel.destroyTexture(worker.textureId!);
-          if (NImage.debug) {
-            print('destroyTexture [${worker.textureId}] because of unmounted');
-          }
+          _destroyUnboundTexture('unmounted');
           return null;
         }
         if (NImage.debug) {
@@ -219,15 +240,12 @@ class _NImageTextureState extends State<NImageTexture> {
         //by now the image has been drawn on texture.
         if (worker != null) {
           if (!mounted) {
-            NImageChannel.destroyTexture(worker.textureId!);
-            if (NImage.debug) {
-              print(
-                  'destroyTexture [${worker.textureId}] because of unmounted');
-            }
+            _destroyUnboundTexture('unmounted');
           } else {
             int tid = worker.textureId!;
             NImageInfo? imageInfo = worker.imageInfo;
             if (imageInfo != null) {
+              _unboundTextureId = null;
               TextureInfo textureInfo = TextureInfo(
                 uri: _uri,
                 width: _textureWidth,
@@ -244,14 +262,24 @@ class _NImageTextureState extends State<NImageTexture> {
                 _error = false;
               });
             } else {
+              _destroyUnboundTexture('imageInfo is null');
               setState(() {
                 _loading = false;
                 _error = true;
               });
             }
           }
+        } else {
+          _destroyUnboundTexture('worker is null');
+          if (mounted) {
+            setState(() {
+              _loading = false;
+              _error = true;
+            });
+          }
         }
       }).catchError((e) {
+        _destroyUnboundTexture('error: $e');
         if (mounted) {
           setState(() {
             _loading = false;
@@ -265,11 +293,12 @@ class _NImageTextureState extends State<NImageTexture> {
   Future<LoadWorker> _createTexture(LoadWorker worker) {
     return NImageChannel.createTexture().then((tid) {
       worker.textureId = tid;
+      _unboundTextureId = tid;
       return worker;
     });
   }
 
-  Future<LoadWorker> _nativeLoadImage(LoadWorker worker) {
+  Future<LoadWorker?> _nativeLoadImage(LoadWorker worker) {
     assert(worker.textureId != null);
     int widthPx = 0, heightPx = 0;
     widthPx = (window.devicePixelRatio * _textureWidth).toInt();
@@ -357,5 +386,15 @@ class _NImageTextureState extends State<NImageTexture> {
           'decreaseRef when disposed [${_textureInfo!.textureId}, ${_textureInfo!.key}], now ref-count: ${max(0, count - 1)}');
     }
     ImageTextureCache.instance.decreaseRef(_textureInfo!);
+  }
+
+  void _destroyUnboundTexture([String? log]) {
+    if (_unboundTextureId != null) {
+      NImageChannel.destroyTexture(_unboundTextureId!);
+      if (NImage.debug) {
+        print('destroyTexture [$_unboundTextureId], $log');
+      }
+      _unboundTextureId = null;
+    }
   }
 }

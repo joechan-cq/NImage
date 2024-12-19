@@ -17,20 +17,18 @@ class LoadWorker {
   TextureInfo? textureInfo;
 }
 
-///
-/// 发送给Native的加载请求
-///
+/// Structure of the request to load image sent to native
 class LoadRequest {
-  /// Native创建用于显示图片的Texture
+  /// id of the texture created by native
   int textureId;
 
-  /// 图片加载url
+  /// image uri
   String? uri;
 
-  /// 图片输出dstWidth，0表示原图大小，单位px
+  /// the width of the output image, 0 means the original size, in pixels
   int width;
 
-  /// 图片输出dstHeight，0表示原图大小，单位px
+  /// the height of the output image, 0 means the original size, in pixels
   int height;
 
   LoadRequest({
@@ -52,7 +50,7 @@ class LoadRequest {
   }
 }
 
-///给NImageInfo生成唯一Key的方法
+/// generate a unique key for NImageInfo
 typedef KeyFactory = String Function(NImageInfo imageInfo);
 
 KeyFactory _defaultFactory = (imageInfo) =>
@@ -61,13 +59,13 @@ KeyFactory _defaultFactory = (imageInfo) =>
 KeyFactory nImageKeyFactory = _defaultFactory;
 
 class NImageInfo {
-  /// 图片uri
+  /// image uri
   final String uri;
 
-  /// 图片宽度，单位px
+  /// width of image, unit: px
   final int imageWidth;
 
-  /// 图片高度，单位px
+  /// height of image, unit: px
   final int imageHeight;
 
   NImageInfo({
