@@ -1,5 +1,7 @@
 package com.flext.nimage;
 
+import android.text.TextUtils;
+
 import androidx.annotation.NonNull;
 import io.flutter.plugin.common.MethodCall;
 
@@ -14,6 +16,8 @@ public class LoadRequest {
 
     public int height;
 
+    public String fit;
+
     public LoadRequest() {
     }
 
@@ -26,6 +30,38 @@ public class LoadRequest {
         if (call.hasArgument("height")) {
             request.height = call.argument("height");
         }
+        request.fit = call.argument("fit");
+        if (TextUtils.isEmpty(request.fit)) {
+            request.fit = BoxFit.fill;
+        }
         return request;
+    }
+
+    public boolean isFit_fill() {
+        return BoxFit.fill.equalsIgnoreCase(fit);
+    }
+
+    public boolean isFit_none() {
+        return BoxFit.none.equalsIgnoreCase(fit);
+    }
+
+    public boolean isFit_contain() {
+        return BoxFit.contain.equalsIgnoreCase(fit);
+    }
+
+    public boolean isFit_cover() {
+        return BoxFit.cover.equalsIgnoreCase(fit);
+    }
+
+    public boolean isFit_fitWidth() {
+        return BoxFit.fitWidth.equalsIgnoreCase(fit);
+    }
+
+    public boolean isFit_fitHeight() {
+        return BoxFit.fitHeight.equalsIgnoreCase(fit);
+    }
+
+    public boolean isFit_scaleDown() {
+        return BoxFit.scaleDown.equalsIgnoreCase(fit);
     }
 }

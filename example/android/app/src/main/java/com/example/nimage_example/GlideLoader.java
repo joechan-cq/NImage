@@ -10,11 +10,14 @@ import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.load.engine.GlideException;
 import com.bumptech.glide.request.FutureTarget;
 import com.bumptech.glide.request.RequestListener;
+import com.bumptech.glide.request.target.CustomTarget;
 import com.bumptech.glide.request.target.Target;
+import com.bumptech.glide.request.transition.Transition;
 import com.flext.nimage.LoadRequest;
 import com.flext.nimage.loader.ILoadCallback;
 import com.flext.nimage.loader.ILoaderProxy;
 
+import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
 /**
@@ -52,11 +55,7 @@ public class GlideLoader implements ILoaderProxy<FutureTarget<Drawable>> {
                         return true;
                     }
                 });
-        if (width > 0 && height > 0) {
-            return builder.submit(width, height);
-        } else {
-            return builder.submit(Target.SIZE_ORIGINAL, FutureTarget.SIZE_ORIGINAL);
-        }
+        return builder.submit(Target.SIZE_ORIGINAL, FutureTarget.SIZE_ORIGINAL);
     }
 
     @Override

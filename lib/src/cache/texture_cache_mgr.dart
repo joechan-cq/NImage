@@ -1,12 +1,13 @@
+import 'package:flutter/cupertino.dart';
 import 'package:nimage/src/cache/lrucache.dart';
 import 'package:nimage/src/models.dart';
 import 'package:nimage/src/nimage_channel.dart';
 import 'package:nimage/src/nimage_widget.dart';
 
 typedef TextureKeyFactory = String Function(
-    String uri, double width, double height);
+    String uri, double width, double height, BoxFit fit);
 
-TextureKeyFactory _defaultFactory = (uri, w, h) => '${generateMd5(uri)}-$w-$h';
+TextureKeyFactory _defaultFactory = (uri, w, h, fit) => '${generateMd5(uri)}-$w-$h-$fit';
 
 TextureKeyFactory nTextureKeyFactory = _defaultFactory;
 
@@ -16,6 +17,7 @@ class TextureInfo {
   double height;
   int textureId;
   String imageKey;
+  BoxFit fit;
   NImageInfo? imageInfo;
 
   TextureInfo({
@@ -24,6 +26,7 @@ class TextureInfo {
     required this.height,
     required this.textureId,
     required this.imageKey,
+    required this.fit,
     this.imageInfo,
   });
 
@@ -31,7 +34,9 @@ class TextureInfo {
     required this.uri,
     required this.width,
     required this.height,
-  })  : textureId = -1,
+    required this.fit,
+  })
+      : textureId = -1,
         imageKey = '',
         imageInfo = null;
 
@@ -43,6 +48,7 @@ class TextureInfo {
     return uri == other.uri &&
         width == other.width &&
         height == other.height &&
+        fit == other.fit &&
         textureId == other.textureId &&
         imageKey == other.imageKey;
   }
@@ -52,7 +58,7 @@ class TextureInfo {
     return 'textureId:$textureId, textureWidth:$width, textureHeight:$height, imagekey:$imageKey, imageInfo:$imageInfo';
   }
 
-  String get key => nTextureKeyFactory(uri, width, height);
+  String get key => nTextureKeyFactory(uri, width, height, fit);
 }
 
 class _Pair<E, F> {
@@ -219,8 +225,8 @@ class ImageTextureCache {
     _textureLruCache.clear();
   }
 
-  static void _onImageTextureRemoved(
-      bool evict, String key, TextureInfo value) {
+  static void _onImageTextureRemoved(bool evict, String key,
+      TextureInfo value) {
     if (evict) {
       NImageChannel.destroyTexture(value.textureId);
       if (NImage.debug) {

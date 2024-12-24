@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:crypto/crypto.dart';
+import 'package:flutter/cupertino.dart';
 import 'package:nimage/src/cache/texture_cache_mgr.dart';
 
 String generateMd5(String data) {
@@ -31,11 +32,14 @@ class LoadRequest {
   /// the height of the output image, 0 means the original size, in pixels
   int height;
 
+  BoxFit fit;
+
   LoadRequest({
     required this.textureId,
     this.uri,
     required this.width,
     required this.height,
+    required this.fit,
   });
 
   Map<String, dynamic> toJson() {
@@ -46,6 +50,7 @@ class LoadRequest {
     }
     json['width'] = width;
     json['height'] = height;
+    json['fit'] = fit.name;
     return json;
   }
 }

@@ -29,10 +29,11 @@ class SinglePicturePageState extends State<SinglePicturePage> {
               _sizeControl(),
               _backgroundColorControl(),
               NImage(
-                // 'https://images.pexels.com/photos/26146996/pexels-photo-26146996.jpeg?auto=compress&cs=tinysrgb&w=800&lazy=load',
-                'https://preview.qiantucdn.com/58pic/27/31/97/69y58PIC8I1qke0dydyVe_PIC2018.png!w1024_new_small_1',
+                'https://images.pexels.com/photos/26146996/pexels-photo-26146996.jpeg?auto=compress&cs=tinysrgb&w=800&lazy=load',
+                // 'https://preview.qiantucdn.com/58pic/27/31/97/69y58PIC8I1qke0dydyVe_PIC2018.png!w1024_new_small_1',
                 width: size,
                 height: size,
+                fit: BoxFit.scaleDown,
                 backgroundColor: backgroundColor ? Colors.red : null,
                 placeHolder: Center(
                   child: SizedBox(

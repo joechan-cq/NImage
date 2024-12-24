@@ -24,9 +24,14 @@ class NImage extends StatelessWidget {
   ///error Widget if error occurred
   final ImageErrorWidgetBuilder? errorBuilder;
 
+  ///image uri
   final String? src;
 
+  ///background color of widget
   final Color? backgroundColor;
+
+  ///as same as the fit in [Image]
+  final BoxFit fit;
 
   const NImage(
     this.src, {
@@ -36,6 +41,7 @@ class NImage extends StatelessWidget {
     this.placeHolder,
     this.errorBuilder,
     this.backgroundColor,
+    this.fit = BoxFit.fill,
   });
 
   @override
@@ -58,6 +64,7 @@ class NImage extends StatelessWidget {
       placeHolder: placeHolder,
       errorBuilder: errorBuilder,
       backgroundColor: backgroundColor,
+      fit: fit,
     );
   }
 }
@@ -70,6 +77,7 @@ class NImageTexture extends StatefulWidget {
   final Widget? placeHolder;
   final ImageErrorWidgetBuilder? errorBuilder;
   final Color? backgroundColor;
+  final BoxFit fit;
 
   const NImageTexture({
     super.key,
@@ -79,6 +87,7 @@ class NImageTexture extends StatefulWidget {
     this.placeHolder,
     this.errorBuilder,
     this.backgroundColor,
+    required this.fit,
   });
 
   @override
@@ -94,6 +103,7 @@ class _NImageTextureState extends State<NImageTexture> {
   late double _textureHeight;
 
   Color? _backgroundColor;
+  late BoxFit _fit;
 
   /// current image texture bound with State
   TextureInfo? _textureInfo;
@@ -105,6 +115,7 @@ class _NImageTextureState extends State<NImageTexture> {
   void initState() {
     super.initState();
     _uri = widget.uri;
+    _fit = widget.fit;
     _textureWidth = widget.width ?? 0;
     _textureHeight = widget.height ?? 0;
     _backgroundColor = widget.backgroundColor;
@@ -210,6 +221,7 @@ class _NImageTextureState extends State<NImageTexture> {
       uri: _uri,
       width: _textureWidth,
       height: _textureHeight,
+      fit: _fit,
     ).key);
     if (_textureInfo != null) {
       _showExistedTexture();
@@ -250,6 +262,7 @@ class _NImageTextureState extends State<NImageTexture> {
                 uri: _uri,
                 width: _textureWidth,
                 height: _textureHeight,
+                fit: _fit,
                 textureId: tid,
                 imageKey: imageInfo.imageKey,
                 imageInfo: imageInfo,
@@ -310,6 +323,7 @@ class _NImageTextureState extends State<NImageTexture> {
       uri: _uri,
       width: widthPx,
       height: heightPx,
+      fit: _fit,
     );
     return NImageChannel.loadImage(request).then((imageInfo) {
       worker.imageInfo = imageInfo;
@@ -338,7 +352,7 @@ class _NImageTextureState extends State<NImageTexture> {
   }
 
   String _loadRequestKey() {
-    return '$_uri-$_textureWidth-$_textureHeight-$_num';
+    return '$_uri-$_textureWidth-$_textureHeight-$_fit-$_num';
   }
 
   void _showExistedTexture() {

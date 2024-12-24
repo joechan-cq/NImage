@@ -6,6 +6,7 @@ import android.graphics.Matrix;
 import android.graphics.Paint;
 import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
+import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
 import android.graphics.drawable.Drawable;
 import android.os.Handler;
@@ -36,8 +37,11 @@ class ImageTextureView implements Drawable.Callback, ILoadCallback {
     private final Context mContext;
 
     private final Surface mSurface;
-
+    private Matrix mMatrix;
     private Matrix mDrawMatrix = null;
+
+    private final RectF mTempSrc = new RectF();
+    private final RectF mTempDst = new RectF();
 
     private final Paint mPaint;
 
@@ -45,10 +49,10 @@ class ImageTextureView implements Drawable.Callback, ILoadCallback {
     private MethodChannel.Result mLoadResult;
 
     private WeakReference<Drawable> mDrawable;
-    private int mDrawableWidth, mDrawableHeight;
     private LoadRequest mLoadRequest;
     private Object mTask;
     private boolean forceConfigMatrix;
+    private int mSurfaceW, mSurfaceH;
 
     public ImageTextureView(Context ctx,
                             @NonNull TextureRegistry.SurfaceTextureEntry surfaceTextureEntry) {
@@ -105,7 +109,11 @@ class ImageTextureView implements Drawable.Callback, ILoadCallback {
     public void loadImage(LoadRequest loadRequest, MethodChannel.Result result) {
         assert (ImageLoader.getProxy() != null);
         cancelLoadTask();
+        forceConfigMatrix = true;
+        mMatrix = new Matrix();
         mLoadRequest = loadRequest;
+        mSurfaceW = loadRequest.width;
+        mSurfaceH = loadRequest.height;
         mLoadResult = result;
         mTask = ImageLoader.getProxy().loadImage(mContext, mLoadRequest, this);
     }
@@ -136,6 +144,13 @@ class ImageTextureView implements Drawable.Callback, ILoadCallback {
     //region Callback by ImageLoader
     @Override
     public void onLoadSuccess(Drawable result) {
+        if (isDestroyed) {
+            if (mLoadResult != null) {
+                mLoadResult.success(null);
+                mLoadResult = null;
+            }
+            return;
+        }
         if (mLoadResult != null) {
             Drawable drawable = getDrawable();
             result.setCallback(this);
@@ -160,6 +175,13 @@ class ImageTextureView implements Drawable.Callback, ILoadCallback {
 
     @Override
     public void onLoadFailed(String error) {
+        if (isDestroyed) {
+            if (mLoadResult != null) {
+                mLoadResult.success(null);
+                mLoadResult = null;
+            }
+            return;
+        }
         if (mLoadResult != null) {
             mLoadResult.error("-1", error, null);
             mLoadResult = null;
@@ -167,19 +189,99 @@ class ImageTextureView implements Drawable.Callback, ILoadCallback {
     }
     //endregion
 
+    /**
+     * {@link android.widget.ImageView#configureBounds}
+     */
     private void configureBounds(Drawable drawable) {
         forceConfigMatrix = false;
-        if (mDrawable == null) {
+        if (drawable == null) {
             return;
         }
 
-        final int dwidth = mDrawableWidth;
-        final int dheight = mDrawableHeight;
+        final int dwidth = drawable.getIntrinsicWidth();
+        final int dheight = drawable.getIntrinsicHeight();
 
-        final int vwidth = mDrawableWidth;
-        final int vheight = mDrawableHeight;
+        final int vwidth = mSurfaceW;
+        final int vheight = mSurfaceH;
 
-        drawable.setBounds(0, 0, vwidth, vheight);
+        final boolean fits = (dwidth < 0 || vwidth == dwidth)
+                && (dheight < 0 || vheight == dheight);
+
+        if (fits) {
+            drawable.setBounds(0, 0, dwidth, dheight);
+            mDrawMatrix = null;
+        } else if (mLoadRequest.isFit_none()) {
+            drawable.setBounds(0, 0, dwidth, dheight);
+            mDrawMatrix = mMatrix;
+            mDrawMatrix.setTranslate(Math.round((vwidth - dwidth) * 0.5f),
+                    Math.round((vheight - dheight) * 0.5f));
+        } else if (mLoadRequest.isFit_fitWidth()) {
+            drawable.setBounds(0, 0, dwidth, dheight);
+            mDrawMatrix = mMatrix;
+            float scale;
+            float dx = 0, dy = 0;
+            scale = (float) vwidth / (float) dwidth;
+            dy = (vheight - dheight * scale) * 0.5f;
+            mDrawMatrix.setScale(scale, scale);
+            mDrawMatrix.postTranslate(Math.round(dx), Math.round(dy));
+        } else if (mLoadRequest.isFit_fitHeight()) {
+            drawable.setBounds(0, 0, dwidth, dheight);
+            mDrawMatrix = mMatrix;
+            float scale;
+            float dx, dy = 0;
+            scale = (float) vheight / (float) dheight;
+            dx = (vwidth - dwidth * scale) * 0.5f;
+            mDrawMatrix.setScale(scale, scale);
+            mDrawMatrix.postTranslate(Math.round(dx), Math.round(dy));
+        } else if (mLoadRequest.isFit_contain()) {
+            drawable.setBounds(0, 0, dwidth, dheight);
+            mTempSrc.set(0, 0, dwidth, dheight);
+            mTempDst.set(0, 0, vwidth, vheight);
+
+            mDrawMatrix = mMatrix;
+
+            mDrawMatrix.setRectToRect(mTempSrc, mTempDst, Matrix.ScaleToFit.CENTER);
+        } else if (mLoadRequest.isFit_scaleDown()) {
+            drawable.setBounds(0, 0, dwidth, dheight);
+            mDrawMatrix = mMatrix;
+            float scale;
+            float dx;
+            float dy;
+
+            if (dwidth <= vwidth && dheight <= vheight) {
+                scale = 1.0f;
+            } else {
+                scale = Math.min((float) vwidth / (float) dwidth,
+                        (float) vheight / (float) dheight);
+            }
+
+            dx = Math.round((vwidth - dwidth * scale) * 0.5f);
+            dy = Math.round((vheight - dheight * scale) * 0.5f);
+
+            mDrawMatrix.setScale(scale, scale);
+            mDrawMatrix.postTranslate(dx, dy);
+        } else if (mLoadRequest.isFit_cover()) {
+            drawable.setBounds(0, 0, dwidth, dheight);
+            mDrawMatrix = mMatrix;
+
+            float scale;
+            float dx = 0, dy = 0;
+
+            if (dwidth * vheight > vwidth * dheight) {
+                scale = (float) vheight / (float) dheight;
+                dx = (vwidth - dwidth * scale) * 0.5f;
+            } else {
+                scale = (float) vwidth / (float) dwidth;
+                dy = (vheight - dheight * scale) * 0.5f;
+            }
+
+            mDrawMatrix.setScale(scale, scale);
+            mDrawMatrix.postTranslate(Math.round(dx), Math.round(dy));
+        } else {
+            //fill or default.
+            drawable.setBounds(0, 0, vwidth, vheight);
+            mDrawMatrix = null;
+        }
     }
 
     private void onDraw() {
@@ -198,7 +300,7 @@ class ImageTextureView implements Drawable.Callback, ILoadCallback {
         try {
             canvas = mSurface.lockCanvas(null);
             if (canvas != null) {
-                if (mDrawableWidth == 0 || mDrawableHeight == 0) {
+                if (drawable.getIntrinsicWidth() == 0 || drawable.getIntrinsicHeight() == 0) {
                     return;
                 }
                 mPaint.setXfermode(new PorterDuffXfermode(PorterDuff.Mode.CLEAR));
@@ -238,14 +340,12 @@ class ImageTextureView implements Drawable.Callback, ILoadCallback {
                 // update cached drawable dimensions if they've changed
                 final int w = dr.getIntrinsicWidth();
                 final int h = dr.getIntrinsicHeight();
-                if (w != mDrawableWidth || h != mDrawableHeight || forceConfigMatrix) {
-                    mDrawableWidth = w;
-                    mDrawableHeight = h;
+                if (w != drawable.getIntrinsicWidth() || h != drawable.getIntrinsicHeight() || forceConfigMatrix) {
                     // updates the matrix, which is dependent on the bounds
                     configureBounds(drawable);
                 }
+                mSurfaceTexture.setDefaultBufferSize(w, h);
             }
-            mSurfaceTexture.setDefaultBufferSize(mDrawableWidth, mDrawableHeight);
             onDraw();
         }
     }
