@@ -344,8 +344,8 @@ class ImageTextureView implements Drawable.Callback, ILoadCallback {
                     // updates the matrix, which is dependent on the bounds
                     configureBounds(drawable);
                 }
-                mSurfaceTexture.setDefaultBufferSize(w, h);
             }
+            mSurfaceTexture.setDefaultBufferSize(mSurfaceW, mSurfaceH);
             onDraw();
         }
     }

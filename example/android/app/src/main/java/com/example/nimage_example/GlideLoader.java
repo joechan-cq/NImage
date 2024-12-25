@@ -55,6 +55,9 @@ public class GlideLoader implements ILoaderProxy<FutureTarget<Drawable>> {
                         return true;
                     }
                 });
+        if (width > 0 && height > 0) {
+            return builder.submit(width, height);
+        }
         return builder.submit(Target.SIZE_ORIGINAL, FutureTarget.SIZE_ORIGINAL);
     }
 

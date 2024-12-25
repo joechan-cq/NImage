@@ -140,6 +140,9 @@ class _NImageTextureState extends State<NImageTexture> {
         _textureWidth = widget.width ?? 0;
         _textureHeight = widget.height ?? 0;
         reload = true;
+      } else if (_fit != widget.fit) {
+        _fit = widget.fit;
+        reload = true;
       }
     }
 
