@@ -18,11 +18,17 @@
 
 ## 原理
 
+#### BoxFit
 
+采用Native进行Fit效果处理的方案，Native收到图片加载请求，根据其中的`fit`参数直接对图像进行处理，然后绘制到Surface上。
+
+不考虑Flutter层使用`FittedBox`进行处理的原因是，不想在Flutter层缓存可能超出显示区域的纹理，例如`cover`效果，如果Flutter层处理，那么纹理就必需是完整的缩放后的大小，然后`FittedBox`才能进行显示处理，但这样缓存的纹理的大小就会超过实际显示的大小。
+
+另一方面，Native层的图片加载框架如果本身支持不同fit的内存或文件缓存，也能有效利用起来。
 
 ## 更新日志
 
-**V0.1**
+**V0.1-alpha**
 
 init
 
@@ -32,10 +38,8 @@ init
 
 - [x] support background color
 
-- [ ] support different boxfit
+- [x] support different boxfit
 
 - [ ] support the manager of textures based on size
 
 - [ ] improve the demo
-
-
