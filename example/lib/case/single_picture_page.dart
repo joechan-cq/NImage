@@ -17,10 +17,7 @@ class SinglePicturePageState extends State<SinglePicturePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Row(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: <Widget>[Text('Single Picture')],
-        ),
+        title: const Text('Single Picture'),
       ),
       body: LayoutBuilder(builder: (context, cs) {
         return SingleChildScrollView(

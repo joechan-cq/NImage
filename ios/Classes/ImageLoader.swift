@@ -3,7 +3,7 @@ import UIKit
 protocol ILoadCallback {
     func onSuccess(imageInfo: NImageInfo)
     func onFailure(error: String)
-    func notifyTextureUpdate(pixelBuffer: CVPixelBuffer)
+    func notifyUIImage(image: UIImage)
 }
 
 protocol ILoaderProxy {
