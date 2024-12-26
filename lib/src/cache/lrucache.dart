@@ -1,7 +1,7 @@
 import 'dart:collection';
 
 /// 大小计算方式
-typedef SizeCalculator = int Function<V>(V value);
+typedef SizeCalculator<V> = int Function(V? value);
 
 /// 有Value被LruCache移出了队列
 typedef OnEntryRemovedCallback<K, V> = void Function(
@@ -13,7 +13,7 @@ typedef OnEntryRemovedCallback<K, V> = void Function(
 class LruCache<K, V> implements Map<K, V> {
   late final LinkedHashMap<K, V> _map;
   late int _maxSize;
-  late final SizeCalculator _sizeCalculator;
+  late final SizeCalculator<V> _sizeCalculator;
   late int _size;
   OnEntryRemovedCallback<K, V>? onEntryRemoveCallback;
 
@@ -23,10 +23,10 @@ class LruCache<K, V> implements Map<K, V> {
   ///
   LruCache({
     required int maxSize,
-    SizeCalculator? sizeCalculator,
+    SizeCalculator<V>? sizeCalculator,
     this.onEntryRemoveCallback,
   }) {
-    _sizeCalculator = sizeCalculator ?? <V>(v) => v != null ? 1 : 0;
+    _sizeCalculator = sizeCalculator ?? (v) => v != null ? 1 : 0;
     _maxSize = maxSize;
     _map = LinkedHashMap<K, V>();
     _size = 0;

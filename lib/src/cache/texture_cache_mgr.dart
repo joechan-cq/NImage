@@ -7,7 +7,8 @@ import 'package:nimage/src/nimage_widget.dart';
 typedef TextureKeyFactory = String Function(
     String uri, double width, double height, BoxFit fit);
 
-TextureKeyFactory _defaultFactory = (uri, w, h, fit) => '${generateMd5(uri)}-$w-$h-$fit';
+TextureKeyFactory _defaultFactory =
+    (uri, w, h, fit) => '${generateMd5(uri)}-$w-$h-$fit';
 
 TextureKeyFactory nTextureKeyFactory = _defaultFactory;
 
@@ -35,8 +36,7 @@ class TextureInfo {
     required this.width,
     required this.height,
     required this.fit,
-  })
-      : textureId = -1,
+  })  : textureId = -1,
         imageKey = '',
         imageInfo = null;
 
@@ -73,9 +73,32 @@ class _Pair<E, F> {
   }
 }
 
+int _imageCount(TextureInfo? v) {
+  return v != null ? 1 : 0;
+}
+
+int _imageSize(TextureInfo? v) {
+  return v != null ? (v.width * v.height).toInt() : 0;
+}
+
+class CacheConfig {
+  int maxCacheSize;
+  SizeCalculator<TextureInfo?> sizeCalculator;
+
+  CacheConfig(this.maxCacheSize, this.sizeCalculator);
+
+  CacheConfig.imageCount()
+      : maxCacheSize = 20,
+        sizeCalculator = _imageCount;
+
+  CacheConfig.imageSize()
+      : maxCacheSize = 1024 * 1024 * 4 * 20,
+        sizeCalculator = _imageSize;
+}
+
 class ImageTextureCache {
   /// The maximum LruCache cache size (by default, represents the number)
-  static int maxCacheSize = 20;
+  static CacheConfig _cacheConfig = CacheConfig.imageCount();
 
   /// The LruCache cache for storing textures
   late final LruCache<String, TextureInfo> _textureLruCache;
@@ -93,10 +116,17 @@ class ImageTextureCache {
     return _instance!;
   }
 
+  static ImageTextureCache init(CacheConfig cacheConfig) {
+    _cacheConfig = cacheConfig;
+    _instance ??= ImageTextureCache._internal();
+    return _instance!;
+  }
+
   ImageTextureCache._internal() {
     _textureReferences = {};
     _textureLruCache = LruCache<String, TextureInfo>(
-      maxSize: maxCacheSize,
+      maxSize: _cacheConfig.maxCacheSize,
+      sizeCalculator: _cacheConfig.sizeCalculator,
       onEntryRemoveCallback: (bool evict, String key, TextureInfo value) {
         _onImageTextureRemoved(evict, key, value);
       },
@@ -225,8 +255,8 @@ class ImageTextureCache {
     _textureLruCache.clear();
   }
 
-  static void _onImageTextureRemoved(bool evict, String key,
-      TextureInfo value) {
+  static void _onImageTextureRemoved(
+      bool evict, String key, TextureInfo value) {
     if (evict) {
       NImageChannel.destroyTexture(value.textureId);
       if (NImage.debug) {
