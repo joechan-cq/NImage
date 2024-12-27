@@ -39,6 +39,7 @@ class ListViewPageState extends State<ListViewPage> {
             alignment: Alignment.center,
             child: NImage(
               uri,
+              width: 300,
               height: 200,
             ),
           );
