@@ -40,6 +40,6 @@ init
 
 - [x] support different boxfit
 
-- [ ] support the manager of textures based on size
+- [x] support the manager of textures based on size
 
 - [ ] improve the demo

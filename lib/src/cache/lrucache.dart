@@ -1,7 +1,7 @@
 import 'dart:collection';
 
 /// 大小计算方式
-typedef SizeCalculator = int Function<V>(V value);
+typedef SizeCalculator<V> = int Function(V? value);
 
 /// 有Value被LruCache移出了队列
 typedef OnEntryRemovedCallback<K, V> = void Function(
@@ -11,9 +11,10 @@ typedef OnEntryRemovedCallback<K, V> = void Function(
 /// Lru算法的缓存Map，实现指定maxSize情况下，优先清除不常用的缓存数据。
 ///
 class LruCache<K, V> implements Map<K, V> {
+  bool _logEnable = false;
   late final LinkedHashMap<K, V> _map;
   late int _maxSize;
-  late final SizeCalculator _sizeCalculator;
+  late final SizeCalculator<V> _sizeCalculator;
   late int _size;
   OnEntryRemovedCallback<K, V>? onEntryRemoveCallback;
 
@@ -23,13 +24,22 @@ class LruCache<K, V> implements Map<K, V> {
   ///
   LruCache({
     required int maxSize,
-    SizeCalculator? sizeCalculator,
+    SizeCalculator<V>? sizeCalculator,
     this.onEntryRemoveCallback,
+    bool log = false,
   }) {
-    _sizeCalculator = sizeCalculator ?? <V>(v) => v != null ? 1 : 0;
+    _logEnable = log;
+    _sizeCalculator = sizeCalculator ?? (v) => v != null ? 1 : 0;
     _maxSize = maxSize;
     _map = LinkedHashMap<K, V>();
     _size = 0;
+    _log('init: maxSize=$maxSize');
+  }
+
+  void _log(Object? o) {
+    if (_logEnable) {
+      print('[LruCache] $o');
+    }
   }
 
   set resize(int max) {
@@ -50,9 +60,7 @@ class LruCache<K, V> implements Map<K, V> {
     V? oldV = _map[key];
     if (oldV != null) {
       _size -= _sizeCalculator(oldV);
-      if (onEntryRemoveCallback != null) {
-        onEntryRemoveCallback!(false, key, oldV);
-      }
+      _removeNotify(false, key, oldV);
     }
     _map[key] = value;
     _size += _sizeCalculator(value);
@@ -65,9 +73,7 @@ class LruCache<K, V> implements Map<K, V> {
       V? oldV = _map[key];
       if (oldV != null) {
         _size -= _sizeCalculator(oldV);
-        if (onEntryRemoveCallback != null) {
-          onEntryRemoveCallback!(false, key, oldV);
-        }
+        _removeNotify(false, key, oldV);
       }
       _map[key] = value;
       _size += _sizeCalculator(value);
@@ -81,9 +87,7 @@ class LruCache<K, V> implements Map<K, V> {
       V? oldV = _map[element.key];
       if (oldV != null) {
         _size -= _sizeCalculator(oldV);
-        if (onEntryRemoveCallback != null) {
-          onEntryRemoveCallback!(false, element.key, oldV);
-        }
+        _removeNotify(false, element.key, oldV);
       }
       _map[element.key] = element.value;
       _size += _sizeCalculator(element.value);
@@ -159,9 +163,7 @@ class LruCache<K, V> implements Map<K, V> {
     }
     V? v = _map.remove(key);
     _size -= _sizeCalculator(v);
-    if (v != null && onEntryRemoveCallback != null) {
-      onEntryRemoveCallback!(false, key, v);
-    }
+    _removeNotify(false, key, v, printLog: true);
     return v;
   }
 
@@ -171,9 +173,7 @@ class LruCache<K, V> implements Map<K, V> {
       bool ret = test(key, value);
       if (ret) {
         _size -= _sizeCalculator(value);
-        if (value != null && onEntryRemoveCallback != null) {
-          onEntryRemoveCallback!(false, key, value);
-        }
+        _removeNotify(false, key, value, printLog: true);
       }
       return ret;
     });
@@ -183,9 +183,7 @@ class LruCache<K, V> implements Map<K, V> {
   V update(K key, V Function(V value) update, {V Function()? ifAbsent}) {
     V v = _map.update(key, (v) {
       _size -= _sizeCalculator(v);
-      if (v != null && onEntryRemoveCallback != null) {
-        onEntryRemoveCallback!(false, key, v);
-      }
+      _removeNotify(false, key, v);
       V newV = update(v);
       _size += _sizeCalculator(newV);
       return newV;
@@ -203,9 +201,7 @@ class LruCache<K, V> implements Map<K, V> {
     _map.updateAll((key, value) {
       V? oldV = _map[key];
       _size -= _sizeCalculator(oldV);
-      if (oldV != null && onEntryRemoveCallback != null) {
-        onEntryRemoveCallback!(false, key, oldV);
-      }
+      _removeNotify(false, key, oldV);
       V newV = update(key, value);
       _size += _sizeCalculator(newV);
       return newV;
@@ -229,8 +225,18 @@ class LruCache<K, V> implements Map<K, V> {
       value = entry.value;
       _map.remove(key);
       _size -= _sizeCalculator(value);
+      _removeNotify(true, key, value);
+    }
+    _log('trim2Size, size: $_size, max: $_maxSize');
+  }
+
+  void _removeNotify(bool evicted, K key, V? value, {bool printLog = false}) {
+    if (value != null) {
+      if (printLog) {
+        _log('$key removed, evicted=$evicted. size: $_size, max: $_maxSize');
+      }
       if (onEntryRemoveCallback != null) {
-        onEntryRemoveCallback!(true, key, value);
+        onEntryRemoveCallback!(evicted, key, value);
       }
     }
   }
