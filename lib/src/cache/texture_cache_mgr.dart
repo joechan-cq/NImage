@@ -92,13 +92,13 @@ class CacheConfig {
         sizeCalculator = _imageCount;
 
   CacheConfig.imageSize()
-      : maxCacheSize = 1024 * 1024 * 4 * 10,
+      : maxCacheSize = 1024 * 1024 * 4 * 4,
         sizeCalculator = _imageSize;
 }
 
 class ImageTextureCache {
   /// The maximum LruCache cache size (by default, represents the number)
-  static CacheConfig _cacheConfig = CacheConfig.imageSize();
+  static CacheConfig _cacheConfig = CacheConfig.imageCount();
 
   /// The LruCache cache for storing textures
   late final LruCache<String, TextureInfo> _textureLruCache;
