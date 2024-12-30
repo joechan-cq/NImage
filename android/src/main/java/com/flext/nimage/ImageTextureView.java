@@ -8,6 +8,7 @@ import android.graphics.PorterDuff;
 import android.graphics.PorterDuffXfermode;
 import android.graphics.RectF;
 import android.graphics.SurfaceTexture;
+import android.graphics.drawable.Animatable;
 import android.graphics.drawable.Drawable;
 import android.os.Handler;
 import android.os.Looper;
@@ -78,13 +79,11 @@ class ImageTextureView implements Drawable.Callback, ILoadCallback {
     public void destroy() {
         try {
             mSurfaceTexture.release();
-        } catch (Exception | Error e) {
-            e.printStackTrace();
+        } catch (Exception | Error ignore) {
         }
         try {
             entry.release();
-        } catch (Exception | Error e) {
-            e.printStackTrace();
+        } catch (Exception | Error ignore) {
         }
         isDestroyed = true;
         cancelLoadTask();
@@ -119,19 +118,27 @@ class ImageTextureView implements Drawable.Callback, ILoadCallback {
     }
 
     public void setVisible(boolean visible) {
+        Drawable drawable = getDrawable();
+//        Log.i("ImageTextureView", drawable.hashCode() + " setVisible: " + visible + " [url:" + mLoadRequest.uri + "]");
         if (visible) {
-            Drawable drawable = getDrawable();
             if (drawable != null) {
                 forceConfigMatrix = true;
                 boolean changed = drawable.setVisible(true, true);
+                if (drawable instanceof Animatable) {
+                    //if drawable is animatable, start animation when visible
+                    ((Animatable) drawable).start();
+                }
                 if (!changed) {
                     invalidateDrawable(drawable);
                 }
             }
         } else {
-            Drawable drawable = getDrawable();
             if (drawable != null) {
                 drawable.setVisible(false, false);
+                if (drawable instanceof Animatable) {
+                    //if drawable is animatable, stop animation when invisible
+                    ((Animatable) drawable).stop();
+                }
             }
         }
     }
@@ -156,13 +163,6 @@ class ImageTextureView implements Drawable.Callback, ILoadCallback {
             result.setCallback(this);
             if (result != drawable) {
                 mDrawable = new WeakReference<>(result);
-                boolean changed = result.setVisible(true, true);
-                //如果changed为true，那么setVisible内部会自行调用invalidateDrawable，不需要手动调
-                if (!changed) {
-                    invalidateDrawable(result);
-                }
-            } else {
-                result.setVisible(true, false);
             }
             NImageInfo imageInfo = new NImageInfo();
             imageInfo.uri = mLoadRequest.uri;
@@ -336,14 +336,12 @@ class ImageTextureView implements Drawable.Callback, ILoadCallback {
     public void invalidateDrawable(@NonNull Drawable dr) {
         Drawable drawable = getDrawable();
         if (dr == drawable) {
-            if (dr != null) {
-                // update cached drawable dimensions if they've changed
-                final int w = dr.getIntrinsicWidth();
-                final int h = dr.getIntrinsicHeight();
-                if (w != drawable.getIntrinsicWidth() || h != drawable.getIntrinsicHeight() || forceConfigMatrix) {
-                    // updates the matrix, which is dependent on the bounds
-                    configureBounds(drawable);
-                }
+            // update cached drawable dimensions if they've changed
+            final int w = dr.getIntrinsicWidth();
+            final int h = dr.getIntrinsicHeight();
+            if (w != drawable.getIntrinsicWidth() || h != drawable.getIntrinsicHeight() || forceConfigMatrix) {
+                // updates the matrix, which is dependent on the bounds
+                configureBounds(drawable);
             }
             mSurfaceTexture.setDefaultBufferSize(mSurfaceW, mSurfaceH);
             onDraw();
@@ -353,7 +351,7 @@ class ImageTextureView implements Drawable.Callback, ILoadCallback {
     @Override
     public void scheduleDrawable(@NonNull Drawable who, @NonNull Runnable what, long when) {
         Drawable drawable = getDrawable();
-        if (who == drawable && what != null) {
+        if (who == drawable) {
             final long delay = when - SystemClock.uptimeMillis();
             mMainHandler.postDelayed(what, delay);
         }
@@ -362,7 +360,7 @@ class ImageTextureView implements Drawable.Callback, ILoadCallback {
     @Override
     public void unscheduleDrawable(@NonNull Drawable who, @NonNull Runnable what) {
         Drawable drawable = getDrawable();
-        if (who == drawable && what != null) {
+        if (who == drawable) {
             mMainHandler.removeCallbacks(what);
         }
     }

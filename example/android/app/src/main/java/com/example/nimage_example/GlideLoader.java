@@ -8,6 +8,7 @@ import com.bumptech.glide.RequestBuilder;
 import com.bumptech.glide.load.DataSource;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
 import com.bumptech.glide.load.engine.GlideException;
+import com.bumptech.glide.load.resource.gif.GifDrawable;
 import com.bumptech.glide.request.FutureTarget;
 import com.bumptech.glide.request.RequestListener;
 import com.bumptech.glide.request.target.CustomTarget;
@@ -51,6 +52,9 @@ public class GlideLoader implements ILoaderProxy<FutureTarget<Drawable>> {
                                                    Target<Drawable> t,
                                                    DataSource dataSource,
                                                    boolean isFirstResource) {
+                        if (resource instanceof GifDrawable) {
+                            ((GifDrawable) resource).start();
+                        }
                         target.onLoadSuccess(resource);
                         return true;
                     }

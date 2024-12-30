@@ -273,6 +273,7 @@ class _NImageTextureState extends State<NImageTexture> {
               worker.textureInfo = textureInfo;
               // put the texture to cache
               _saveTextureInfo(worker);
+              callImageVisible();
               setState(() {
                 _loading = false;
                 _error = false;

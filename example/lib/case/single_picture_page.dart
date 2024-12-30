@@ -9,6 +9,13 @@ class SinglePicturePage extends StatefulWidget {
 }
 
 class SinglePicturePageState extends State<SinglePicturePage> {
+  //https://preview.qiantucdn.com/58pic/27/31/97/69y58PIC8I1qke0dydyVe_PIC2018.png!w1024_new_small_1
+  String jpgUrl =
+      'https://images.pexels.com/photos/26146996/pexels-photo-26146996.jpeg?auto=compress&cs=tinysrgb&w=800&lazy=load';
+  String gifUrl =
+      'https://gd-hbimg.huaban.com/e0a25a7cab0d7c2431978726971d61720732728a315ae-57EskW_fw1200';
+
+  int type = 0;
   double size = 100;
   bool backgroundColor = false;
   BoxFit fit = BoxFit.fill;
@@ -25,13 +32,13 @@ class SinglePicturePageState extends State<SinglePicturePage> {
             padding: const EdgeInsets.all(8.0),
             child: Column(
               children: [
+                _imageTypeSet(),
                 _sizeSet(),
                 _backgroundColorControl(),
                 _fitSet(),
                 const SizedBox(height: 30),
                 NImage(
-                  'https://images.pexels.com/photos/26146996/pexels-photo-26146996.jpeg?auto=compress&cs=tinysrgb&w=800&lazy=load',
-                  // 'https://preview.qiantucdn.com/58pic/27/31/97/69y58PIC8I1qke0dydyVe_PIC2018.png!w1024_new_small_1',
+                  type == 0 ? jpgUrl : gifUrl,
                   width: size,
                   height: size,
                   fit: fit,
@@ -61,6 +68,38 @@ class SinglePicturePageState extends State<SinglePicturePage> {
           ),
         );
       }),
+    );
+  }
+
+  Widget _imageTypeSet() {
+    return Row(
+      children: [
+        const Text('loadImage:', style: TextStyle(fontSize: 18)),
+        Expanded(
+          child: RadioListTile<int>(
+              title: const Text('jpg'),
+              value: 0,
+              contentPadding: EdgeInsets.zero,
+              groupValue: type,
+              onChanged: (int? v) {
+                setState(() {
+                  type = v!;
+                });
+              }),
+        ),
+        Expanded(
+          child: RadioListTile<int>(
+              title: const Text('gif'),
+              value: 1,
+              contentPadding: EdgeInsets.zero,
+              groupValue: type,
+              onChanged: (int? v) {
+                setState(() {
+                  type = v!;
+                });
+              }),
+        ),
+      ],
     );
   }
 
