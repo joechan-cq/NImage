@@ -9,7 +9,13 @@ public class ImageTextureView: NSObject, FlutterTexture, ILoadCallback {
     private var loadRequest: LoadRequest?
     private var pixelBuffer: CVPixelBuffer?
     private var task: Any?
+    
     var textureId: Int64?
+    
+    private var animatedImages: [UIImage]?
+    private var index: Int = 0
+    private var frameInterval: TimeInterval?
+    private var animatedPlayTimer: Timer?
     
     public init(_ registry: FlutterTextureRegistry) {
         textureRegistry = registry
@@ -27,12 +33,36 @@ public class ImageTextureView: NSObject, FlutterTexture, ILoadCallback {
         self.task = ImageLoader.proxy?.loadImage(from: request, callback: self)
     }
     
-    // 新增方法：设置可见性
+    // 设置可见性
     public func setVisible(_ visible: Bool) {
         // 在这里实现设置可见性的逻辑
-
+        if (visible) {
+            //如果可见，判定是否是动图，如果是动图，则启动动图展示
+            if (self.animatedImages != nil) {
+                showNextFrame()
+            } else {
+                //如果不是动图，则直接显示图片
+            }
+        } else {
+            if (self.animatedPlayTimer != nil) {
+                //停止Timer
+                self.animatedPlayTimer?.invalidate()
+                self.animatedPlayTimer = nil
+            }
+        }
     }
-
+    
+    // 销毁
+    public func destroy() {
+        if (self.animatedPlayTimer != nil) {
+            self.animatedPlayTimer?.invalidate()
+            self.animatedPlayTimer = nil
+        }
+        self.pixelBuffer = nil
+        self.animatedImages?.removeAll()
+        self.index = 0
+    }
+    
     public func copyPixelBuffer() -> Unmanaged<CVPixelBuffer>? {
         if (self.pixelBuffer == nil) {
             return nil;
@@ -43,7 +73,28 @@ public class ImageTextureView: NSObject, FlutterTexture, ILoadCallback {
     
     private func notifyTextureUpdate(pixelBuffer: CVPixelBuffer) {
         self.pixelBuffer = pixelBuffer
-        self.textureRegistry.textureFrameAvailable(self.textureId!)
+        DispatchQueue.main.async {
+                   guard let textureId = self.textureId else {
+                       return
+                   }
+                   self.textureRegistry.textureFrameAvailable(textureId)
+               }
+    }
+    
+    private func showNextFrame() {
+        if (self.animatedPlayTimer == nil) {
+            self.animatedPlayTimer = Timer.scheduledTimer(withTimeInterval: self.frameInterval!, repeats: true) { timer in
+                self.index += 1
+                if (self.index >= self.animatedImages!.count) {
+                    self.index = 0
+                }
+                let frame = self.animatedImages![self.index]
+                if let cgImage = frame.cgImage {
+                    let p = self.imageToPixelBuffer(image: cgImage)
+                    self.notifyTextureUpdate(pixelBuffer: p!)
+                }
+            }
+        }
     }
     
     private func fitTransform(_ image: UIImage) -> UIImage {
@@ -216,10 +267,25 @@ public class ImageTextureView: NSObject, FlutterTexture, ILoadCallback {
     }
     
     func notifyUIImage(image: UIImage) {
-        let fitImage = self.fitTransform(image)
-        if let cgImage = fitImage.cgImage {
-            let pixelBuffer = self.imageToPixelBuffer(image: cgImage)
-            notifyTextureUpdate(pixelBuffer: pixelBuffer!)
+        if let images = image.images {
+            // 如果是动图，则处理动画图像
+            self.animatedImages = images
+            self.index = 0
+            self.frameInterval = image.duration / Double((images.count - 1))
+            //在这里先解析出第一帧
+            let frame = images[self.index]
+            let fitImage = self.fitTransform(frame)
+            if let cgImage = fitImage.cgImage {
+                let pixelBuffer = self.imageToPixelBuffer(image: cgImage)
+                notifyTextureUpdate(pixelBuffer: pixelBuffer!)
+            }
+        } else {
+            // 处理静态图像
+            let fitImage = self.fitTransform(image)
+            if let cgImage = fitImage.cgImage {
+                let pixelBuffer = self.imageToPixelBuffer(image: cgImage)
+                notifyTextureUpdate(pixelBuffer: pixelBuffer!)
+            }
         }
     }
     

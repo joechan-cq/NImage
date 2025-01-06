@@ -18,7 +18,8 @@ public class TextureManager {
 
     public func destroyTexture(_ textureId: Int64) {
         if cache[textureId] != nil {
-            cache.removeValue(forKey: textureId)
+            let imageTextureView = cache.removeValue(forKey: textureId)
+            imageTextureView?.destroy()
             self.textureRegistry.unregisterTexture(textureId)
         }
     }
