@@ -34,7 +34,7 @@ init
 
 ## 任务
 
-- [ ] support gif、ani-webp
+- [x] support gif、ani-webp
 
 - [x] support background color
 
