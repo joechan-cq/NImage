@@ -9,7 +9,7 @@ protocol ILoadCallback {
 protocol ILoaderProxy {
     associatedtype T
     func loadImage(from request: LoadRequest, callback: ILoadCallback) -> T
-    func cancelLoad(task: T)
+    func cancelLoad(task: Any)
 }
 
 class ImageLoader: NSObject {

@@ -30,7 +30,7 @@ class SDWebImageLoader: NSObject, ILoaderProxy {
         }
     }
     
-    func cancelLoad(task: SDWebImageCombinedOperation?) {
-        task?.cancel()
+    func cancelLoad(task: Any) {
+        (task as! SDWebImageCombinedOperation).cancel()
     }
 }

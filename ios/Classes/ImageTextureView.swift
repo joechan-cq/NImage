@@ -27,6 +27,10 @@ public class ImageTextureView: NSObject, FlutterTexture, ILoadCallback {
     }
     
     public func loadImage(request: LoadRequest, result: @escaping FlutterResult) {
+        if (self.task != nil) {
+            ImageLoader.proxy?.cancelLoad(task: self.task!)
+            self.task = nil
+        }
         self.loadRequest = request
         self.loadResult = result
         // 使用 SDWebImageLoader 加载图片
