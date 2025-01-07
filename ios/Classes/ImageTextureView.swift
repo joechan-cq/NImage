@@ -73,12 +73,20 @@ public class ImageTextureView: NSObject, FlutterTexture, ILoadCallback {
     
     private func notifyTextureUpdate(pixelBuffer: CVPixelBuffer) {
         self.pixelBuffer = pixelBuffer
-        DispatchQueue.main.async {
-                   guard let textureId = self.textureId else {
-                       return
-                   }
-                   self.textureRegistry.textureFrameAvailable(textureId)
-               }
+        //判断是否是主线程，如果不是，则切换到主线程调用
+        if (Thread.isMainThread) {
+            guard let textureId = self.textureId else {
+                return
+            }
+            self.textureRegistry.textureFrameAvailable(textureId)
+        } else {
+            DispatchQueue.main.async {
+                guard let textureId = self.textureId else {
+                    return
+                }
+                self.textureRegistry.textureFrameAvailable(textureId)
+            }
+        }
     }
     
     private func showNextFrame() {
@@ -89,7 +97,8 @@ public class ImageTextureView: NSObject, FlutterTexture, ILoadCallback {
                     self.index = 0
                 }
                 let frame = self.animatedImages![self.index]
-                if let cgImage = frame.cgImage {
+                let fitImage = self.fitTransform(frame)
+                if let cgImage = fitImage.cgImage {
                     let p = self.imageToPixelBuffer(image: cgImage)
                     self.notifyTextureUpdate(pixelBuffer: p!)
                 }
