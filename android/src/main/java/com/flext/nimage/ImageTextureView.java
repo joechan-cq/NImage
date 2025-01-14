@@ -126,7 +126,9 @@ class ImageTextureView implements Drawable.Callback, ILoadCallback {
                 boolean changed = drawable.setVisible(true, true);
                 if (drawable instanceof Animatable) {
                     //if drawable is animatable, start animation when visible
-                    ((Animatable) drawable).start();
+                    if (!((Animatable) drawable).isRunning()) {
+                        ((Animatable) drawable).start();
+                    }
                 }
                 if (!changed) {
                     invalidateDrawable(drawable);

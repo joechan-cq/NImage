@@ -18,6 +18,10 @@
 
 ## 原理
 
+#### 对接Native图片加载
+
+在Android和iOS上，分别以`Drawable`和`UIImage`作为Native图片加载框架需要加载后返回给`NImage`的图像的载体
+
 #### BoxFit
 
 采用Native进行Fit效果处理的方案，Native收到图片加载请求，根据其中的`fit`参数直接对图像进行处理，然后绘制到Surface上。
@@ -43,3 +47,7 @@ init
 - [x] support the manager of textures based on size
 
 - [ ] improve the demo
+
+- [ ] memory test
+
+- [ ] seperate `SDWebImageLoader` from `ios`
