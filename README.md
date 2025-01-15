@@ -16,6 +16,37 @@
 
 2. 依赖Flutter SDK对于外接纹理的渲染，部分Flutter版本存在渲染的兼容问题
 
+## 如何使用
+
+```dart
+                NImage(
+                  imageUrl,
+                  width: 100,
+                  height: 100,
+                  fit: BoxFit.contain,
+                  backgroundColor: Colors.red,
+                  placeHolder: Center(
+                    child: SizedBox(
+                      width: 30,
+                      height: 30,
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          Colors.blue,
+                        ),
+                      ),
+                    ),
+                  ),
+                  errorBuilder: (context, error, stackTrace) {
+                    return Center(
+                      child: Text(
+                        'Error',
+                        style: TextStyle(color: Colors.red),
+                      ),
+                    );
+                  },
+                ),
+```
+
 ## 原理
 
 #### 对接Native图片加载
