@@ -4,7 +4,6 @@ PODS:
     - Flutter
   - nimage (0.0.1):
     - Flutter
-    - SDWebImage (~> 5.0)
   - SDWebImage (5.20.0):
     - SDWebImage/Core (= 5.20.0)
   - SDWebImage/Core (5.20.0)
@@ -13,6 +12,7 @@ DEPENDENCIES:
   - Flutter (from `Flutter`)
   - integration_test (from `.symlinks/plugins/integration_test/ios`)
   - nimage (from `.symlinks/plugins/nimage/ios`)
+  - SDWebImage
 
 SPEC REPOS:
   trunk:
@@ -29,9 +29,9 @@ EXTERNAL SOURCES:
 SPEC CHECKSUMS:
   Flutter: e0871f40cf51350855a761d2e70bf5af5b9b5de7
   integration_test: 252f60fa39af5e17c3aa9899d35d908a0721b573
-  nimage: b2d5da50d1222527442996c5b81caf5b61602a38
+  nimage: 0db9df2a0ad868ceb6cb0d331179a2a76330b701
   SDWebImage: 73c6079366fea25fa4bb9640d5fb58f0893facd8
 
-PODFILE CHECKSUM: 819463e6a0290f5a72f145ba7cde16e8b6ef0796
+PODFILE CHECKSUM: 714692ff1659e958f1f9a4d0da22800a0a92543f
 
 COCOAPODS: 1.16.2

@@ -47,6 +47,8 @@
                 ),
 ```
 
+![Single](snapshots/single.gif))![List](snapshots/list.gif)
+
 ## 原理
 
 #### 对接Native图片加载
@@ -77,8 +79,10 @@ init
 
 - [x] support the manager of textures based on size
 
+- [x] seperate `SDWebImageLoader` from `ios`
+
 - [ ] improve the demo
 
 - [ ] memory test
 
-- [ ] seperate `SDWebImageLoader` from `ios`
+- [ ] migrate to swift package manager

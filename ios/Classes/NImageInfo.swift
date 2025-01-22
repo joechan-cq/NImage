@@ -1,14 +1,14 @@
 import Foundation
 
 public class NImageInfo {
-    var uri: String?
-    var imageWidth: Int?
-    var imageHeight: Int?
+    public var uri: String?
+    public var imageWidth: Int?
+    public var imageHeight: Int?
 
-    init() {
+    public init() {
     }
 
-    func toMap() -> [String: Any] {
+    public func toMap() -> [String: Any] {
         var map: Dictionary<String, Any> = [:]
         if let uri = uri {
             map["uri"] = uri

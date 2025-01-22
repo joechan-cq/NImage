@@ -2,12 +2,12 @@ import Foundation
 import Flutter
 
 public class LoadRequest {
-    var uri: String?
-    var width: Int?
-    var height: Int?
-    var fit: FitMode?
+    public var uri: String?
+    public var width: Int?
+    public var height: Int?
+    public var fit: FitMode?
     
-    enum FitMode: String {
+    public enum FitMode: String {
         case fill
         case none
         case contain
@@ -17,10 +17,10 @@ public class LoadRequest {
         case scaleDown
     }
     
-    init() {
+    public init() {
     }
 
-    static func fromCall(call: FlutterMethodCall) -> LoadRequest {
+    public static func fromCall(call: FlutterMethodCall) -> LoadRequest {
         let request = LoadRequest()
         if let dict = call.arguments as? Dictionary<String, Any> {
             request.uri = dict["uri"] as? String

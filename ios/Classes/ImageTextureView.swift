@@ -1,7 +1,6 @@
 import Flutter
 import Foundation
 import UIKit
-import SDWebImage
 
 public class ImageTextureView: NSObject, FlutterTexture, ILoadCallback {
     private let textureRegistry: FlutterTextureRegistry
@@ -271,15 +270,15 @@ public class ImageTextureView: NSObject, FlutterTexture, ILoadCallback {
         }
     }
     
-    func onSuccess(imageInfo: NImageInfo) {
+    public func onSuccess(imageInfo: NImageInfo) {
         loadResult?(imageInfo.toMap())
     }
     
-    func onFailure(error: String) {
+    public func onFailure(error: String) {
         loadResult?(FlutterError(code: "onFailure", message:error, details: nil))
     }
     
-    func notifyUIImage(image: UIImage) {
+    public func notifyUIImage(image: UIImage) {
         if let images = image.images {
             // 如果是动图，则处理动画图像
             self.animatedImages = images
