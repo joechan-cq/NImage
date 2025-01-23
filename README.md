@@ -49,16 +49,8 @@
 
 ## Preview
 
-<div style="display: flex; justify-content: space-between;">
-  <video width="480" height="960" controls>
-    <source src="snapshots/single.mp4" type="video/mp4">
-    Your browser does not support the video tag.
-  </video>
-  <video width="480" height="960" controls>
-    <source src="snapshots/list.mp4" type="video/mp4">
-    Your browser does not support the video tag.
-  </video>
-</div>
+- [Single Video](snapshots/single.mp4)
+- [List Video](snapshots/list.mp4)
 
 ## 原理
 
