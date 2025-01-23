@@ -49,8 +49,7 @@
 
 ## Preview
 
-- [Single Video](snapshots/single.mp4)
-- [List Video](snapshots/list.mp4)
+![single](snapshots/single.gif)  ![list](snapshots/list.gif)
 
 ## 原理
 
